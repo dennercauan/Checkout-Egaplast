@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Egaplast</title>
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="icon" href="img/favicon.png" type="image/png">
+    <!-- Font Awesome para ícones (opcional no login, mas bom para padronizar) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Loader de Transição (Inicia oculto) -->
+    <div id="transition-curtain" class="curtain-hidden"></div>
+
+    <div class="login-container">
+        <div class="login-box">
+            
+            <!-- Conteúdo do Formulário -->
+            <div id="login-content">
+                <div class="logo-container">
+                    <img src="img/egaplast.png" alt="Egaplast Logo">
+                </div>
+                <h2>Bem-vindo de volta</h2>
+                <p class="login-subtitle">Acesse sua conta para gerenciar pedidos.</p>
+
+                <form id="loginForm">
+                    <div class="input-group">
+                        <input type="email" id="email" placeholder="Seu e-mail" required autocomplete="email">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="password" id="password" placeholder="Sua senha" required autocomplete="current-password">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                    </div>
+
+                    <button type="submit" id="loginBtn">Entrar na Plataforma</button>
+                    <p id="error-msg" class="error"></p>
+                </form>
+            </div>
+
+            <!-- Mensagem de Sucesso (Oculta inicialmente) -->
+            <div id="success-content" style="display: none;">
+                <div class="success-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h2 class="animate-welcome">Olá, <span id="user-name-display" style="color: var(--secondary);">...</span>!</h2>
+                <p class="login-subtitle">Iniciando Dashboard...</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    
+    <!-- Script de login -->
+    <script src="js/login.js"></script>
+</body>
+</html>

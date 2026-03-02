@@ -1,0 +1,455 @@
+/* ======================================== */
+/* RESET GLOBAL DE CURSOR                   */
+/* ======================================== */
+button, 
+label, 
+select, 
+summary, 
+input[type="button"], 
+input[type="submit"], 
+input[type="reset"], 
+input[type="checkbox"], 
+input[type="radio"] {
+    cursor: pointer;
+}
+
+/* Garante que botões desabilitados não tenham a mãozinha */
+button:disabled,
+input:disabled {
+    cursor: not-allowed;
+}
+
+
+/* ======================================== */
+/* ESTILO GERAL (BASEADO NO ELEMENTO.HTML)  */
+/* ======================================== */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0d3269, #f26522);
+    margin: 0;
+    padding: 20px; /* Adiciona espaço em volta de todo o conteúdo */
+    color: #333;
+    min-height: 100vh;
+}
+
+/* ======================================== */
+/* CABEÇALHO (HEADER)                       */
+/* ======================================== */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background-color: #ffffff;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    margin-bottom: 20px; /* Espaço entre o header e o conteúdo principal */
+}
+
+header .header-left img {
+    max-width: 120px;
+    height: auto;
+    cursor: pointer;
+}
+
+header .user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+header .user-info span {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+header .user-info button {
+    background-color: #6c757d;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+}
+header .user-info button:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+
+/* ======================================== */
+/* LAYOUT DO CONTEÚDO PRINCIPAL             */
+/* ======================================== */
+
+/* CABEÇALHO DO CONTEÚDO (BARRA AZUL) */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffffff;
+    padding-top: 30px;
+    padding-bottom: 40px;
+    border-radius: 12px 12px 0 0;
+    gap: 15px;
+}
+
+.content-header h1 {
+    font-size: 32px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.content-header .top-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.add-element-btn {
+    background-color: #007bff; /* Azul padrão para consistência */
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-element-btn:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.search-input {
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 200px;
+}
+
+/* CONTAINER BRANCO ABAIXO DA BARRA AZUL */
+.content-wrapper {
+    /* Removemos o estilo visual para que ele apenas organize o conteúdo */
+    margin-top: 0;
+}
+
+
+
+/* ======================================== */
+/* CARDS DA DASHBOARD (ESTILO MODERNO)      */
+/* ======================================== */
+#item-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 25px; /* Aumenta o espaço entre os cards */
+}
+
+/* Estilo individual de cada card */
+.item {
+    background-color: rgba(255, 255, 255, 0.95); /* Fundo branco um pouco translúcido */
+    backdrop-filter: blur(5px);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.item:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.item.empty {
+    background-color: rgba(248, 249, 250, 0.8); /* Fundo cinza para cards vazios */
+}
+.item.empty strong {
+    color: #6c757d;
+}
+
+.card-content {
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.card-content strong {
+    font-size: 16px;
+    color: #343a40;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.card-stats {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #495057;
+}
+
+.card-stats i {
+    margin-right: 6px;
+    color: #007bff;
+}
+
+/* --- EFEITO HOVER PARA OS BOTÕES --- */
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 15px;
+    /* Inicia invisível e um pouco para a direita */
+    opacity: 0;
+    transform: translateX(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* O card PAI (:hover) controla a aparição dos botões FILHOS (.card-actions) */
+.item:hover .card-actions {
+    /* Fica visível e volta à posição original */
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.card-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #adb5bd;
+    transition: color 0.2s ease;
+    padding: 5px;
+}
+
+.card-actions .edit-btn:hover {
+    color: #ffc107;
+}
+.card-actions .delete-btn:hover {
+    color: #dc3545;
+}
+
+/* ======================================== */
+/* ESTILOS PARA O MODAL (POP-UP)            */
+/* ======================================== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: #ffffff;
+    margin: 15% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.close {
+    color: #aaa;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-content h2 {
+    color: #0d3269;
+    margin-bottom: 20px;
+}
+
+.modal-content input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.modal-content button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease-in-out;
+}
+
+.modal-content button:hover {
+    background-color: #0056b3;
+}
+
+/* ======================================== */
+/* CONTEÚDO PRINCIPAL (MAIN) - AJUSTADO     */
+/* ======================================== */
+
+main {
+    /* 1. Define a largura máxima do conteúdo */
+    max-width: 1400px; /* Use o mesmo valor do seu header para alinhamento perfeito */
+
+    /* 2. Centraliza o bloco na tela e controla o espaçamento */
+    margin: 0 auto 20px auto; /* 0 em cima, auto nas laterais, 20px embaixo */
+    
+    /* 3. Padding interno para telas menores (opcional, mas recomendado) */
+    padding: 0 20px;
+    box-sizing: border-box; /* Garante que o padding não aumente a largura total */
+}
+
+/* ======================================== */
+/* CONTROLES DE ORDENAÇÃO (MENU SELETOR)   */
+/* ======================================== */
+.sort-controls {
+    /* O container agora só ajuda no alinhamento */
+    margin-left: auto;
+}
+
+.sort-select {
+    /* Estilo base para combinar com outros inputs */
+    padding: 10px 35px 10px 15px; /* Mais padding à direita para a seta */
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #343a40;
+    background-color: #ffffff;
+
+    /* Remove a aparência padrão do sistema operacional */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    /* Adiciona nossa própria seta customizada */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 12px;
+}
+
+/* ======================================== */
+/* MODAL E RESULTADOS DA BUSCA              */
+/* ======================================== */
+
+/* Aumenta a largura do modal de busca */
+.search-modal-content {
+    max-width: 800px; 
+}
+
+#searchResultsContainer {
+    margin-top: 20px;
+    max-height: 60vh; /* Altura máxima com barra de rolagem */
+    overflow-y: auto;
+    padding-right: 10px; /* Espaço para a barra de rolagem */
+}
+
+/* Estilo para cada item encontrado na busca */
+.search-result-item {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: box-shadow 0.2s ease;
+}
+
+.search-result-item:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.search-result-item h3 {
+    margin: 0 0 10px 0;
+    color: #0d3269;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.search-result-item h3 .elemento-info {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.search-result-item .details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    font-size: 14px;
+}
+
+.search-result-item .detail p {
+    margin: 0;
+}
+.search-result-item .detail strong {
+    color: #495057;
+}
+
+.search-result-item .go-to-element-btn {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 6px 12px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+.search-result-item .go-to-element-btn:hover {
+    background-color: #218838;
+}
+
+/* Estilo para o loader (animação de carregando) */
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #0d3269;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 40px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

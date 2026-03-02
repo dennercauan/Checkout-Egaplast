@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório - Egaplast</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/regenerator-runtime/0.13.11/runtime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/3.32.0/minified.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-body: #f0f4f8;
+            --text-dark: #0f172a;
+            --blue: #2563eb;
+            --green: #059669;
+            --orange: #ea580c;
+            --purple: #7c3aed;
+            --gold: #fbbf24;
+            --silver: #94a3b8;
+            --bronze: #b45309;
+            --header-h: 14vh;
+        }
+
+        * { box-sizing: border-box; }
+        
+        /* --- AJUSTE DE FONTE (Menor e mais contida) --- */
+        html {
+            /* Reduzi o multiplicador de 0.9vw para 0.65vw e o teto para 16px */
+            font-size: clamp(12px, 0.65vw, 16px); 
+        }
+
+        body {
+            margin: 0; padding: 1.2rem;
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-body); 
+            color: var(--text-dark);
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+            display: flex; flex-direction: column; gap: 1.2rem;
+            /* Melhora renderização de fontes */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ANIMAÇÕES SIMPLIFICADAS (GPU Friendly) */
+        /* Usamos translate3d para forçar aceleração de hardware na TV */
+        @keyframes slideInUp { 
+            from { opacity: 0; transform: translate3d(0, 20px, 0); } 
+            to { opacity: 1; transform: translate3d(0, 0, 0); } 
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Removida animação complexa de onda para algo mais simples */
+        @keyframes simple-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* HEADER OTIMIZADO */
+        .header-container {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #fff; padding: 0.8rem 1.5rem; border-radius: 1rem;
+            /* Sombra simples é mais rápida de renderizar */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            border: 1px solid #e2e8f0;
+            flex: 0 0 auto; height: var(--header-h); min-height: 70px;
+        }
+        
+        .header-left { display: flex; align-items: center; gap: 1.2rem; height: 100%; }
+        .logo { height: 75%; width: auto; max-height: 50px; object-fit: contain; }
+        .page-title { font-size: 1.4rem; font-weight: 800; color: #334155; line-height: 1.1; max-width: 14rem; }
+
+        /* RELÓGIO (Tamanhos reduzidos) */
+        .clock-display { text-align: right; min-width: 12rem; }
+        .clock-time { font-size: 3.2rem; font-weight: 800; color: var(--blue); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+        .clock-date { font-size: 1rem; color: #64748b; font-weight: 600; text-transform: uppercase; margin-top: 0.2rem; }
+
+        /* KPIs (Tamanhos reduzidos) */
+        .kpi-wrapper { display: flex; gap: 2rem; align-items: center; height: 100%; }
+        .kpi-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 1.5rem; border-left: 2px solid #e2e8f0; height: 70%; }
+        .kpi-val { font-size: 3.5rem; font-weight: 800; line-height: 1; margin-bottom: 0.2rem; }
+        .kpi-label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-total .kpi-val { color: var(--blue); } .kpi-done .kpi-val { color: var(--green); } .kpi-pending .kpi-val { color: var(--orange); }
+
+        /* LAYOUT PRINCIPAL */
+        .main-layout { 
+            display: grid; grid-template-columns: 1.6fr 1fr; gap: 1.2rem; 
+            flex: 1; min-height: 0; width: 100%;
+        }
+
+        /* CARROSSEL */
+        .carousel-container {
+            background: #fff; border-radius: 1rem; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            padding: 1.5rem; position: relative; display: flex; flex-direction: column; 
+            overflow: hidden; height: 100%;
+        }
+        .slide-header { 
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; padding-bottom: 0.8rem; 
+            border-bottom: 2px solid #f1f5f9; flex: 0 0 auto; 
+        }
+        .slide-icon { font-size: 1.8rem; }
+        .slide-title { font-size: 1.6rem; font-weight: 800; color: #1e293b; text-transform: uppercase; }
+        
+        .slide-content { 
+            flex: 1; overflow-y: hidden; position: relative; 
+            display: flex; flex-direction: column;
+            opacity: 1; transition: opacity 0.3s ease; /* Transição mais rápida */
+            will-change: opacity; /* Dica para a GPU */
+        }
+        .slide-content.fade-out { opacity: 0; }
+        
+        /* Barra de progresso sem sombra para performance */
+        .slide-progress { position: absolute; bottom: 0; left: 0; height: 4px; background: var(--blue); width: 0%; transition: width linear; }
+
+        /* LATERAL FIXA */
+        .fixed-panel {
+            background: #fff; border-radius: 1rem; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            padding: 1.5rem; display: flex; flex-direction: column; 
+            border-top: 4px solid var(--orange); /* Borda apenas no topo é mais leve */
+            height: 100%; overflow: hidden;
+        }
+        
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex: 0 0 auto; }
+        .panel-title { 
+            font-size: 1.2rem; font-weight: 800; color: var(--orange); text-transform: uppercase; 
+            display: flex; align-items: center; gap: 0.8rem; 
+        }
+        
+        /* Loader simplificado (apenas opacidade) */
+        .loader-dot {
+            width: 10px; height: 10px; background: var(--orange); border-radius: 50%;
+            animation: simple-blink 1s infinite;
+        }
+
+        .ongoing-list { display: flex; flex-direction: column; gap: 0.8rem; overflow-y: auto; padding-right: 0.5rem; flex: 1; }
+
+        .og-card {
+            background: #fff7ed; border: 1px solid #ffedd5; border-left: 4px solid var(--orange);
+            border-radius: 0.5rem; padding: 1rem; 
+            /* Removido o pulse-border infinito para economizar CPU */
+        }
+        .og-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+        .og-rom { font-size: 1.6rem; font-weight: 800; color: #1e293b; }
+        .og-timer { font-family: monospace; font-weight: 700; color: #fff; background: var(--orange); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 1.1rem; }
+        .og-details { font-size: 0.95rem; color: #475569; font-weight: 600; display: flex; flex-direction: column; gap: 0.2rem; }
+        
+        /* RANKING OTIMIZADO */
+        .rank-list-container { display: flex; flex-direction: column; gap: 0.6rem; height: 100%; }
+        .rank-row { 
+            display: flex; align-items: center; gap: 1rem; 
+            padding: 0.6rem 1rem; padding-right: 3rem; 
+            background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0;
+            animation: slideInUp 0.4s ease forwards; opacity: 0; position: relative;
+        }
+        .rank-row:nth-child(1) { animation-delay: 0.05s; } .rank-row:nth-child(2) { animation-delay: 0.1s; } 
+        
+        .rank-pos { font-size: 1.8rem; font-weight: 900; width: 2.5rem; text-align: center; line-height: 1; }
+        .rank-1 .rank-pos { color: var(--gold); } .rank-2 .rank-pos { color: var(--silver); } .rank-3 .rank-pos { color: var(--bronze); }
+        .rank-data { flex-grow: 1; }
+        .rank-info { display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-weight: 700; font-size: 1rem; color: #334155; }
+        .rank-score { font-size: 1.1rem; color: var(--blue); }
+        /* Barra sólida sem gradiente para performance */
+        .rank-bar-bg { height: 0.6rem; background: #e2e8f0; border-radius: 0.3rem; overflow: hidden; }
+        .rank-bar-fill { height: 100%; width: 0%; transition: width 0.5s ease-out; background: var(--blue); }
+        .rank-1 .rank-bar-fill { background: var(--gold); } 
+        .rank-2 .rank-bar-fill { background: var(--silver); } 
+        .rank-3 .rank-bar-fill { background: var(--bronze); } 
+        .trophy-icon { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: 1.5rem; color: var(--gold); }
+
+        /* MAIORES VOLUMES */
+        .big-list-container { display: flex; flex-direction: column; gap: 0.8rem; height: 100%; }
+        .big-item-row {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #fff; border: 1px solid #e0e7ff; border-left: 5px solid var(--purple);
+            border-radius: 0.6rem; padding: 0.8rem 1.2rem;
+            animation: fadeIn 0.4s ease forwards; opacity: 0;
+        }
+        .big-item-row:nth-child(1) { animation-delay: 0.05s; }
+        .big-left { display: flex; flex-direction: column; gap: 0.1rem; }
+        .big-rom { font-size: 1.8rem; font-weight: 800; color: #1e293b; line-height: 1; }
+        .big-details { font-size: 0.9rem; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.8rem; }
+        .big-stat-box { background: var(--purple); color: #fff; padding: 0.4rem 1rem; border-radius: 0.5rem; display: flex; flex-direction: column; align-items: center; min-width: 5rem; }
+        .big-stat-num { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+        .big-stat-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+
+        /* PRODUÇÃO */
+        .prod-grid { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); 
+            gap: 1rem; align-content: start; height: 100%;
+        }
+        .prod-item { 
+            background: #f3e8ff; border: 1px solid #d8b4fe; color: #6b21a8; 
+            padding: 1rem; border-radius: 0.6rem; text-align: center;
+            animation: fadeIn 0.4s ease forwards; opacity: 0;
+        }
+        .prod-rom { font-size: 1.6rem; font-weight: 800; margin-bottom: 0.3rem; }
+        .prod-who { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+
+        /* FINALIZADOS */
+        .finished-list { display: flex; flex-direction: column; gap: 0.6rem; height: 100%; }
+        .fin-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0.8rem 1.2rem; background: #fff; border-radius: 0.5rem; 
+            border: 1px solid #ecfdf5; border-left: 4px solid var(--green);
+            animation: slideInUp 0.4s ease forwards; opacity: 0;
+        }
+        .finished-list .fin-row:nth-child(n) { animation-delay: calc(0.05s * var(--i)); }
+        .fin-rom { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+        .fin-store { font-size: 0.9rem; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .fin-time-box {
+            background: #dcfce7; color: var(--green); padding: 0.4rem 0.8rem; border-radius: 0.4rem;
+            font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        /* OVERLAYS - PERFORMANCE FIX */
+        #overlay-alert {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            /* REMOVIDO BLUR (pesado), usado cor sólida */
+            background: rgba(15, 23, 42, 0.96); 
+            z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease;
+            will-change: opacity;
+        }
+        #overlay-alert.active { opacity: 1; visibility: visible; }
+        
+        .overlay-icon { font-size: 8rem; margin-bottom: 1.5rem; color: #fff; }
+        .overlay-title { font-size: 3rem; color: #fff; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem; }
+        .overlay-romaneio { font-size: 7rem; font-weight: 900; color: #fff; line-height: 1; }
+        .overlay-new .overlay-romaneio, .overlay-new .overlay-icon { color: var(--blue); }
+        .overlay-done .overlay-romaneio, .overlay-done .overlay-icon { color: var(--green); }
+        .overlay-prod .overlay-romaneio, .overlay-prod .overlay-icon { color: var(--purple); }
+
+        /* DEBUG CONSOLE */
+        #tv-debug-console { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; background: rgba(0,0,0,0.8); color: lime; font-family: monospace; padding: 20px; overflow-y: auto; z-index: 999999; border-top: 5px solid red; }
+
+        ::-webkit-scrollbar { width: 3px; background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 2px; }
+
+        @media (max-aspect-ratio: 1/1) {
+            .main-layout { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+            .header-container { flex-wrap: wrap; height: auto; padding: 0.8rem; }
+            .kpi-wrapper { display: none; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="tv-debug-console"></div>
+    <script>window.onerror = function(m,s,l){var c=document.getElementById('tv-debug-console');c.style.display='block';c.innerHTML+='<div>[ERRO] '+m+' (L:'+l+')</div>';}</script>
+
+    <div id="overlay-alert">
+        <div class="overlay-icon" id="overlay-icon"></div>
+        <div class="overlay-title" id="overlay-title"></div>
+        <div class="overlay-romaneio" id="overlay-romaneio"></div>
+    </div>
+
+    <header class="header-container">
+        <div class="header-left">
+            <img src="img/egaplast.png" alt="Logo" class="logo">
+            <div class="page-title">Painel de Atividade</div>
+        </div>
+
+        <div class="kpi-wrapper">
+            <div class="kpi-box kpi-total">
+                <div class="kpi-val" id="kpiTotal">0</div>
+                <div class="kpi-label">Total Hoje</div>
+            </div>
+            <div class="kpi-box kpi-done">
+                <div class="kpi-val" id="kpiDone">0</div>
+                <div class="kpi-label">Finalizados</div>
+            </div>
+            <div class="kpi-box kpi-pending">
+                <div class="kpi-val" id="kpiPending">0</div>
+                <div class="kpi-label">Em Andamento</div>
+            </div>
+        </div>
+
+        <div class="clock-display">
+            <div class="clock-time" id="clockTime">--:--:--</div>
+            <div class="clock-date" id="clockDate">---</div>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <section class="carousel-container">
+            <div class="slide-header">
+                <i class="fa-solid fa-chart-bar slide-icon" id="slideIcon"></i>
+                <div class="slide-title" id="slideTitle">Iniciando...</div>
+            </div>
+            <div class="slide-content" id="slideContent"></div>
+            <div class="slide-progress" id="slideProgress"></div>
+        </section>
+
+        <aside class="fixed-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="loader-dot"></div>
+                    Pedidos Em Andamento
+                </div>
+            </div>
+            <div id="ongoingList" class="ongoing-list"></div>
+        </aside>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/painel-tv.js"></script>
+</body>
+</html>

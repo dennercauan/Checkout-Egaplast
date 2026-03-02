@@ -1,0 +1,207 @@
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+body 
+{ 
+    background: linear-gradient(135deg, #004aad, #ff6a00); /* Azul → Laranja */
+     min-height:100vh; 
+     color:#333; }
+
+header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 30px;
+    background-color:#fff;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+.header-left { display:flex; align-items:center; gap:15px; }
+.header-logo { max-width:120px; cursor:pointer; transition: transform 0.2s ease; }
+.header-logo:hover { transform: scale(1.05); }
+
+.user-info { display:flex; align-items:center; gap:15px; }
+.user-info span { font-weight:bold; color:#333; }
+#logoutBtn { padding:8px 15px; border:none; border-radius:6px; background-color:#0d6efd; color:#fff; font-weight:bold; cursor:pointer; transition:0.3s; }
+#logoutBtn:hover { background-color:#0b5ed7; }
+
+main { max-width:1800px; margin:40px auto; padding:0 20px; }
+
+.welcome-card {
+    background: linear-gradient(135deg,#0d6efd,#4cafcb);
+    color:#fff;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+    text-align:center;
+    margin-bottom:30px;
+}
+.welcome-card h2 { margin-bottom:10px; font-size:28px; }
+.welcome-card p { margin-bottom:8px; font-size:16px; }
+
+.add-element-btn {
+    margin:20px 0;
+    padding:12px 25px;
+    background:#007bff;
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.3s;
+}
+.add-element-btn:hover { background:#0056b3; }
+
+.spreadsheet-bar {
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+}
+
+/* Cards de elementos */
+.spreadsheet-bar .item {
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    width:220px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    cursor:pointer;
+    transition:0.3s;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+.spreadsheet-bar .item:hover {
+    transform: translateY(-5px);
+    box-shadow:0 12px 25px rgba(0,0,0,0.2);
+}
+.spreadsheet-bar .item strong {
+    font-size:18px;
+    margin-bottom:10px;
+}
+.spreadsheet-bar .item .pedido-count {
+    background:#0d6efd;
+    color:#fff;
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:14px;
+    width:max-content;
+    text-align:center;
+}
+
+/* Modal */
+.modal {
+    display:none;
+    position:fixed;
+    z-index:999;
+    left:0; top:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
+}
+.modal-content {
+    background:#fff;
+    padding:30px;
+    margin:10% auto;
+    border-radius:12px;
+    width:350px;
+    text-align:center;
+}
+.close {
+    float:right;
+    font-size:22px;
+    cursor:pointer;
+    color:#333;
+}
+.modal-content h2 { margin-bottom:15px; }
+.modal-content input {
+    width:100%; padding:12px 10px; border-radius:6px; border:1px solid #ccc; margin-bottom:15px;
+    font-size:16px;
+}
+.modal-content button {
+    padding:12px 20px; background:#0d6efd; color:#fff; border:none; border-radius:8px; cursor:pointer;
+    transition:0.3s; font-size:16px;
+}
+.modal-content button:hover { background:#0056b3; }
+
+/* Tabela principal */
+#ordersTable {
+    width: 100%; /* ocupa quase toda a largura da tela */
+    margin: 10px auto;
+    padding-right: 20px;
+    padding-left: 20px;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    background: #fff;
+    max-width: none; /* ignora limite do container main */
+    font-size: 14px;
+}
+
+/* Cabeçalho */
+#ordersTable thead {
+    background: #0d6efd;
+    color: #fff;
+    text-align: left;
+}
+
+#ordersTable thead th {
+    padding: 12px 15px;
+}
+
+/* Linhas */
+#ordersTable tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background 0.3s;
+}
+
+#ordersTable tbody tr:hover {
+    background: #f1f1f1;
+}
+
+/* Células */
+#ordersTable td {
+    padding: 10px 15px;
+}
+
+/* Botões dentro da tabela */
+#ordersTable button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.3s;
+}
+
+#ordersTable .edit-btn { background: #ffc107; color: #fff; }
+#ordersTable .edit-btn:hover { background: #e0a800; }
+
+#ordersTable .delete-btn { background: #dc3545; color: #fff; }
+#ordersTable .delete-btn:hover { background: #b02a37; }
+
+#ordersTable .efetivado-btn { background: #198754; color: #fff; }
+#ordersTable .efetivado-btn:hover { background: #145c36; }
+
+#ordersTable .caixas-btn { background: #0d6efd; color: #fff; }
+#ordersTable .caixas-btn:hover { background: #0b5ed7; }
+
+/* Linhas efetivadas */
+#ordersTable tr.efetivado {
+    background-color: lab(65.49% -50.95 40.55) !important; /* Verde Egaplast */
+}
+
+/* Responsividade */
+@media screen and (max-width: 1200px) {
+    #ordersTable {
+        width: 95%;
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    #ordersTable {
+        font-size: 12px;
+    }
+    #ordersTable button {
+        font-size: 11px;
+        padding: 5px 8px;
+    }
+}

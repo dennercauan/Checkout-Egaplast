@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Egaplast</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="img/favicon.png" type="image/png">
+    
+    <style>
+        /* --- VARIÁVEIS GLOBAIS --- */
+        :root {
+            --primary: #0d3269;    /* Azul Egaplast */
+            --secondary: #f26522;  /* Laranja Egaplast */
+            --bg-base: #f0f2f5;    /* Base Cinza Claro */
+            --text-main: #333333;
+            --text-muted: #666666;
+            --shadow-card: 0 10px 25px rgba(0,0,0,0.05);
+            --shadow-hover: 0 20px 45px rgba(13, 50, 105, 0.1);
+        }
+
+        /* --- RESET BÁSICO --- */
+        * { box-sizing: border-box; }
+
+        /* --- FUNDO DA PÁGINA (GRADIENTE) --- */
+        body { 
+            background: linear-gradient(135deg, #eef2f8 0%, #fff8f5 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            font-size: 14px; 
+            overflow-x: hidden;
+        }
+
+        body.loading-active { overflow: hidden !important; height: 100vh; }
+        .app-container { width: 95%; max-width: 1600px; margin: 0 auto; padding: 20px 0; }
+
+        /* --- LOADER --- */
+        #page-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 20px; transition: opacity 0.6s ease-out, visibility 0.6s; }
+        .modern-loader { position: relative; width: 70px; height: 70px; opacity: 0; animation: loaderStartUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .loader-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        #app-content { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .content-visible { opacity: 1 !important; transform: translateY(0) !important; }
+        
+        .loader-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; }
+        .ring-1 { border-top-color: var(--primary); border-right-color: var(--primary); animation: spin-reactor 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+        .ring-2 { inset: 8px; border-bottom-color: var(--secondary); border-left-color: var(--secondary); animation: spin-reactor 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite reverse; }
+        .loader-core { position: absolute; inset: 30px; background: #e0e0e0; border-radius: 50%; animation: pulse-reactor 1.5s ease-in-out infinite; }
+        .loader-text { color: var(--primary); font-size: 14px; letter-spacing: 4px; text-transform: uppercase; font-weight: 700; opacity: 0; animation: fadeInText 1s ease-out 0.3s forwards; }
+
+        /* --- NAVBAR --- */
+        .modern-navbar {
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.8); border-radius: 20px; padding: 12px 30px; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 8px 30px rgba(0,0,0,0.04); position: sticky; top: 20px; z-index: 100; margin-bottom: 40px;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 15px; }
+        .nav-logo { height: 42px; width: auto; transition: transform 0.3s ease; cursor: pointer; }
+        .nav-logo:hover { transform: scale(1.08); }
+        .nav-title { color: var(--primary); font-size: 16px; font-weight: 700; border-left: 2px solid #ddd; padding-left: 15px; line-height: 1.2; }
+        .nav-title small { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; letter-spacing: 0.5px; }
+        .nav-actions { display: flex; align-items: center; gap: 15px; }
+
+        /* --- BUSCA --- */
+        .search-container { position: relative; height: 40px; display: flex; align-items: center; }
+        .search-expandable { 
+            background: #ffffff; border: 1px solid #d1d1d1; padding: 0; width: 40px; height: 40px; border-radius: 40px; 
+            font-size: 14px; color: var(--text-main); transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); cursor: pointer; 
+            padding-left: 50px !important; padding-right: 15px; /* Espaçamento forçado para não sobrepor ícone */
+        }
+        .search-icon-overlay { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #666; font-size: 16px; pointer-events: none; z-index: 5; transition: color 0.3s; }
+        .search-container:hover .search-expandable, .search-expandable:focus, .search-expandable:not(:placeholder-shown) { width: 300px; background: #fff; border-color: var(--primary); box-shadow: 0 4px 15px rgba(13, 50, 105, 0.1); cursor: text; }
+        .search-expandable:focus { outline: none; }
+        .search-expandable:focus + .search-icon-overlay { color: var(--secondary); }
+        .search-expandable::placeholder { color: transparent; } 
+        .search-container:hover .search-expandable::placeholder, .search-expandable:focus::placeholder { color: #999; }
+
+        /* --- BOTÕES --- */
+        .btn-nav { background: #fff; color: var(--text-main); border: 1px solid #eee; padding: 8px 18px; border-radius: 30px; cursor: pointer; transition: all 0.2s; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .btn-nav:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-color: #ddd; }
+        .btn-primary { background: var(--primary); color: #fff; border: none; box-shadow: 0 4px 12px rgba(13, 50, 105, 0.2); }
+        .btn-primary:hover { background: #163d75; box-shadow: 0 6px 18px rgba(13, 50, 105, 0.3); }
+        .btn-logout { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; color: #dc3545; border-color: rgba(220, 53, 69, 0.1); background: rgba(220, 53, 69, 0.05); }
+        .btn-logout:hover { background: #dc3545; color: white; }
+
+        /* --- HEADER E SELECT --- */
+        .content-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; padding: 0 10px; }
+        .header-text h1 { color: var(--primary); font-size: 24px; font-weight: 300; margin: 0; letter-spacing: -0.5px; }
+        .header-text h1 strong { font-weight: 800; }
+
+        .sort-container { position: relative; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 0 15px; height: 42px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: all 0.3s ease; min-width: 180px; }
+        .sort-container:hover { border-color: var(--primary); box-shadow: 0 4px 15px rgba(13, 50, 105, 0.1); transform: translateY(-1px); }
+        .sort-container i { color: var(--primary); font-size: 14px; }
+        .sort-container .chevron-icon { font-size: 10px; color: #aaa; margin-left: auto; pointer-events: none; }
+        .modern-select { appearance: none; -webkit-appearance: none; border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-main); width: 100%; cursor: pointer; outline: none; z-index: 2; }
+
+        /* --- CARDS --- */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding-bottom: 80px; }
+        .element-card { background: #fff; border-radius: 20px; height: 190px; padding: 25px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-card); border: 1px solid rgba(255,255,255,0.5); opacity: 0; animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .element-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-hover); }
+        .card-main { transition: all 0.4s; height: 100%; display: flex; flex-direction: column; }
+        .element-card:hover .card-main { transform: translateY(-30px); opacity: 0.2; filter: blur(3px); }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; line-height: 1.3; }
+        .card-info { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; margin-top: auto; }
+        .card-info i { color: var(--secondary); background: rgba(242, 101, 34, 0.1); padding: 8px; border-radius: 8px; }
+        
+        /* Card Overlay e Ações */
+        .card-overlay { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); display: flex; flex-direction: column; justify-content: center; align-items: center; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); padding: 20px; }
+        .element-card:hover .card-overlay { transform: translateY(0); }
+        .overlay-stat { font-size: 42px; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 5px; }
+        .overlay-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #888; margin-bottom: 20px; }
+        .overlay-btn { background: var(--secondary); color: #fff; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(242, 101, 34, 0.3); transition: transform 0.2s; display: flex; align-items: center; gap: 8px; }
+        .overlay-btn:hover { transform: scale(1.05); }
+
+        .card-actions-top { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; opacity: 0; transition: opacity 0.3s; z-index: 10; }
+        .element-card:hover .card-actions-top { opacity: 1; }
+        .icon-btn { width: 32px; height: 32px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; color: #555; }
+        .icon-btn:hover { transform: scale(1.15); color: var(--primary); }
+        .icon-btn.del:hover { color: #dc3545; }
+
+        /* --- MODAIS UNIFICADOS E LIMPOS --- */
+        .modal { 
+            display: none; position: fixed; z-index: 9999; inset: 0; width: 100%; height: 100%;
+            background-color: rgba(13, 50, 105, 0.6); backdrop-filter: blur(5px); 
+            align-items: center; justify-content: center; animation: fadeIn 0.3s; 
+        }
+        
+        .modal-content { 
+            /* FUNDO BRANCO SÓLIDO (Sem faixas) */
+            background-color: #ffffff !important; 
+            padding: 35px; width: 90%; max-width: 480px; 
+            border-radius: 20px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); 
+            position: relative; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .modal h2 { margin: 0; color: var(--primary); font-size: 22px; display: flex; align-items: center; gap: 10px; }
+        .modal p { margin: 0; color: #666; font-size: 14px; line-height: 1.5; }
+
+        /* INPUTS LIMPOS NO MODAL */
+        input[type="text"], input[type="password"] { 
+            width: 100%; padding: 15px; 
+            border: 1px solid #e0e0e0; border-radius: 12px; 
+            background-color: #f7f9fc; /* Fundo levemente cinza para contraste sutil com o branco do modal */
+            font-size: 14px; outline: none; transition: all 0.3s; color: var(--text-main); 
+        }
+        input:focus { border-color: var(--secondary); background-color: #fff; box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.1); }
+
+        /* AÇÕES DO MODAL (TRANSPARENTE) */
+        .modal-actions { 
+            display: flex; gap: 10px; width: 100%; margin-top: 10px; 
+            background: transparent !important; /* Garante que não tenha faixa branca extra */
+        }
+
+        .modal-btn { background: var(--primary); color: white; padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 15px; transition: 0.3s; width: 100%; display: flex; justify-content: center; align-items: center; }
+        .modal-btn:hover { background: #1a4485; transform: translateY(-2px); }
+        
+        .btn-cancel { background: #f0f2f5; color: #666; border: 1px solid #ddd; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; flex: 1; transition: 0.2s; display: flex; justify-content: center; align-items: center; }
+        .btn-cancel:hover { background: #e4e6eb; color: #333; }
+        
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; flex: 1; transition: 0.2s; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3); display: flex; justify-content: center; align-items: center; }
+        .btn-danger:hover { background: #bb2d3b; transform: translateY(-2px); }
+
+        .close { position: absolute; right: 20px; top: 20px; font-size: 20px; color: #ccc; cursor: pointer; transition: 0.2s; }
+        .close:hover { color: var(--secondary); }
+        .close-modal-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; color: #ccc; cursor: pointer; transition: 0.2s; }
+        .close-modal-btn:hover { color: var(--text-main); }
+
+        /* Resultados da Busca */
+        #searchResultsModal .modal-content { max-width: 700px; background: #fff !important; }
+        .search-result-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .search-result-item h3 { margin: 0 0 5px; font-size: 16px; color: var(--primary); display: flex; justify-content: space-between; }
+        .go-to-element-btn { display: inline-block; font-size: 12px; color: var(--secondary); text-decoration: none; font-weight: bold; }
+
+        @keyframes popIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes loaderStartUp { from { opacity: 0; transform: scale(0.5) rotate(-45deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+        @keyframes fadeInText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin-reactor { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse-reactor { 0%, 100% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } }
+    </style>
+</head>
+<body class="loading-active">
+
+    <div id="page-loader">
+        <div class="modern-loader">
+            <div class="loader-ring ring-1"></div>
+            <div class="loader-ring ring-2"></div>
+            <div class="loader-core"></div>
+        </div>
+        <div class="loader-text">Carregando...</div>
+    </div>
+
+    <div id="app-content" class="app-container">
+
+        <nav class="modern-navbar">
+            <div class="nav-brand">
+                <img src="img/egaplast.png" alt="Egaplast Logo" class="nav-logo" id="logoBtn">
+                <div class="nav-title">
+                    Dashboard
+                    <small id="user-email">Carregando...</small>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-expandable" placeholder="Pesquisar Romaneio ou Loja...">
+                    <i class="fa-solid fa-magnifying-glass search-icon-overlay"></i>
+                </div>
+                
+                <button id="tvModeBtn" class="btn-nav" title="Painel TV">
+                    <i class="fa-solid fa-tv"></i> Ranking
+                </button>
+
+                <button id="admAccessBtn" class="btn-nav" title="Área Administrativa">
+                    <i class="fa-solid fa-user-shield"></i> ADM
+                </button>
+                
+                <button id="openModalBtn" class="btn-nav btn-primary">
+                    <i class="fa-solid fa-plus"></i> Novo Elemento
+                </button>
+
+                <button id="logoutBtn" class="btn-nav btn-logout" title="Sair">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </nav>
+
+        <div class="content-header">
+            <div class="header-text">
+                <h1>Olá, <strong id="user-name">...</strong></h1>
+            </div>
+            
+            <div class="sort-container">
+                <i class="fa-solid fa-arrow-down-short-wide"></i>
+                <select id="sort-select" class="modern-select">
+                    <option value="recentes">Mais Recentes</option>
+                    <option value="antigos">Mais Antigos</option>
+                    <option value="quantidade">Qtd. Documentos</option>
+                </select>
+                <i class="fa-solid fa-chevron-down chevron-icon"></i>
+            </div>
+        </div>
+
+        <div id="item-container" class="cards-grid">
+            </div>
+
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <h2><i class="fa-regular fa-folder-open"></i> Novo Elemento</h2>
+            <p>Crie um novo agrupamento para organizar seus pedidos.</p>
+            <input type="text" id="element-title" placeholder="Ex: 20/11" autocomplete="off">
+            <button id="createElementBtn" class="modal-btn">Criar Elemento</button>
+        </div>
+    </div>
+
+    <div id="renameModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn" onclick="closeRenameModal()">&times;</span>
+            <h2><i class="fa-solid fa-pen-to-square"></i> Renomear</h2>
+            <p>Digite o novo nome para este elemento.</p>
+            
+            <input type="text" id="renameInput" placeholder="Novo título..." autocomplete="off">
+            
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeRenameModal()">Cancelar</button>
+                <button id="confirmRenameBtn" class="modal-btn">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn" onclick="closeDeleteModal()">&times;</span>
+            <h2 style="color: #dc3545;"><i class="fa-solid fa-triangle-exclamation"></i> Excluir Elemento?</h2>
+            <p>
+                Você tem certeza que deseja excluir <strong>"<span id="deleteTargetName">...</span>"</strong>?
+                <br><br>
+                <span style="font-size: 12px; color: #dc3545; background: #fff0f0; padding: 5px 10px; border-radius: 5px;">
+                    Esta ação removerá todos os documentos vinculados.
+                </span>
+            </p>
+            
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+                <button id="confirmDeleteBtn" class="btn-danger">Sim, Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admAuthModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <span id="closeAdmModal" class="close">&times;</span>
+            <h2 style="justify-content: center;"><i class="fa-solid fa-lock"></i> Acesso Restrito</h2>
+            <p>Área exclusiva para administradores.</p>
+            <input type="password" id="admPasswordInput" placeholder="Senha de Administrador">
+            <button id="confirmAdmBtn" class="modal-btn" style="background: #333;">Acessar Painel</button>
+        </div>
+    </div>
+
+    <div id="searchResultsModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span id="closeSearchModal" class="close">&times;</span>
+            <h2><i class="fa-solid fa-search"></i> Resultados</h2>
+            <div id="searchResultsContainer" style="max-height: 60vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <div id="logoutConfirmModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <span id="closeLogoutModal" class="close">&times;</span>
+            <h2 style="justify-content: center; color: #dc3545;"><i class="fa-solid fa-right-from-bracket"></i> Sair da Plataforma?</h2>
+            <p>Você será desconectado e precisará fazer login novamente para acessar o Dashboard.</p>
+            
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button id="cancelLogoutBtn" class="btn-cancel">Cancelar</button>
+                <button id="confirmLogoutBtn" class="btn-danger">Sim, Sair</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
