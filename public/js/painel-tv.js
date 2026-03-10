@@ -32,7 +32,15 @@ firebase.auth().onAuthStateChanged(user => {
     else window.location.href = "index.html";
 });
 
-function initDashboard() {
+async function initDashboard() {
+    // --- BUSCA USUÁRIOS PARA MAPEAR OS EMAILS CORRETAMENTE ---
+    try {
+        const snap = await db.collection("usuarios").get();
+        snap.forEach(doc => {
+            if(doc.data().email) uidToEmailMap[doc.id] = doc.data().email;
+        });
+    } catch(e) { console.error("Erro ao carregar usuários", e); }
+
     updateClock();
     setInterval(() => { updateClock(); updateTimers(); }, 1000);
 
@@ -159,19 +167,33 @@ function renderSlideRanking(el) {
     const rankingMap = {};
     function gerarChave(txt) { return txt ? txt.split('@')[0].toLowerCase().trim() : 'desc'; }
     
+    // Processa Pedidos (Fracionamento SKUs)
     currentPedidos.forEach(p => {
         (p.documentos||[]).forEach(d => {
-            if(d.responsavel && ['Nota Fiscal','Minuta'].includes(d.tipo)) {
-                const chave = gerarChave(d.responsavel);
-                const nome = d.responsavel.split('@')[0].toUpperCase();
-                if(!rankingMap[chave]) rankingMap[chave] = {pontos:0, nome};
-                (d.caixas||[]).forEach(c => { (c.produtos||[]).forEach(prod => rankingMap[chave].pontos += parseInt(prod.quantidade||0)); });
+            if(['Nota Fiscal','Minuta'].includes(d.tipo)) {
+                const arrResps = d.responsaveis && d.responsaveis.length > 0 ? d.responsaveis : (d.responsavel ? [d.responsavel] : []);
+                const divisoes = arrResps.length || 1;
+                
+                let totalSkus = 0;
+                (d.caixas||[]).forEach(c => { 
+                    (c.produtos||[]).forEach(prod => totalSkus += (parseInt(prod.quantidade)||0)); 
+                });
+
+                const fracao = totalSkus / divisoes;
+
+                arrResps.forEach(r => {
+                    const chave = gerarChave(r);
+                    const nome = r.split('@')[0].toUpperCase();
+                    if(!rankingMap[chave]) rankingMap[chave] = {pontos:0, nome};
+                    rankingMap[chave].pontos += fracao;
+                });
             }
         });
     });
-    // Adiciona pontos das ordens de produção ao ranking
+
+    // Adiciona pontos das ordens de produção ao ranking (100 pts cada)
     currentOrdens.forEach(o => {
-        const email = o.criadorEmail || uidToEmailMap[o.criadorUid];
+        const email = uidToEmailMap[o.criadorUid] || o.criadorEmail;
         if(email) {
             const chave = gerarChave(email);
             const nome = email.split('@')[0].toUpperCase();
@@ -198,13 +220,16 @@ function renderSlideRanking(el) {
             iconHtml = '<i class="fa-solid fa-trophy fa-bounce trophy-icon"></i>';
         } else if(i===1) cls="rank-2"; else if(i===2) cls="rank-3";
         
+        // Formatando com 1 casa decimal e removendo .0
+        const ptsFormatado = u.pontos.toFixed(1).replace('.0', '');
+
         html += `
             <div class="rank-row ${cls}">
                 <div class="rank-pos">${i+1}º</div>
                 <div class="rank-data">
                     <div class="rank-info">
                         <span>${u.nome}</span> 
-                        <span class="rank-score">${u.pontos.toLocaleString()} pts</span>
+                        <span class="rank-score">${ptsFormatado} pts</span>
                     </div>
                     <div class="rank-bar-bg">
                         <div class="rank-bar-fill" style="width:${pct}%"></div>
@@ -216,6 +241,17 @@ function renderSlideRanking(el) {
     });
     html += '</div>';
     el.innerHTML = html;
+}
+
+// Puxa o nome de todo mundo que está ajudando no pedido
+function getEquipe(p) {
+    let resps = new Set();
+    (p.documentos || []).forEach(d => {
+        const arr = d.responsaveis && d.responsaveis.length > 0 ? d.responsaveis : (d.responsavel ? [d.responsavel] : []);
+        arr.forEach(r => resps.add(r.split('@')[0].toUpperCase()));
+    });
+    const criador = p.criadorEmail ? p.criadorEmail.split('@')[0].toUpperCase() : '---';
+    return Array.from(resps).join(', ') || criador;
 }
 
 function renderSlideBiggest(el) {
@@ -242,7 +278,7 @@ function renderSlideBiggest(el) {
     let html = '<div class="big-list-container">';
     topOrders.forEach((item) => {
         const p = item.pedido;
-        const name = p.criadorEmail ? p.criadorEmail.split('@')[0].toUpperCase() : "...";
+        const name = getEquipe(p);
         const loja = p.loja || "N/A";
         
         html += `
@@ -314,7 +350,7 @@ function renderSlideFinished(el) {
     displayList.forEach((p, index) => {
         const time = p.completedAt ? p.completedAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--';
         const loja = p.loja || "---";
-        const name = p.criadorEmail ? p.criadorEmail.split('@')[0].toUpperCase() : '---';
+        const name = getEquipe(p);
 
         html += `
             <div class="fin-row" style="--i: ${index + 1}"> 
@@ -368,14 +404,14 @@ function renderOngoingSidebar() {
         .sort((a,b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
 
     if(pendentes.length === 0) {
-        el.innerHTML = "<div style='text-align:center; color:#94a3b8; margin-top:20px; font-size: 1.2rem;'><i class='fa-solid fa-mug-hot' style='font-size:2rem; margin-bottom:10px;'></i><br>Tudo em dia!</div>";
+        el.innerHTML = "<div style='text-align:center; color:#94a3b8; margin-top:20px; font-size: 1.2rem;'><i class='fa-solid fa-mug-hot' style='font-size:2rem; margin-bottom:10px;'></i><br>Nenhum pedido em andamento</div>";
         return;
     }
     
     el.innerHTML = "";
     pendentes.forEach(p => {
         const start = p.createdAt ? p.createdAt.toDate().getTime() : Date.now();
-        const name = p.criadorEmail ? p.criadorEmail.split('@')[0].toUpperCase() : '---';
+        const name = getEquipe(p);
         const loja = p.loja || "Loja";
 
         const div = document.createElement('div');

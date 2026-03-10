@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Egaplast</title>
+    <title>Pedidos - Egaplast</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="img/favicon.png" type="image/png">
     
@@ -90,38 +90,10 @@
         .header-text h1 { color: var(--primary); font-size: 24px; font-weight: 300; margin: 0; letter-spacing: -0.5px; }
         .header-text h1 strong { font-weight: 800; }
 
-        .sort-container { position: relative; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 0 15px; height: 42px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: all 0.3s ease; min-width: 180px; }
-        .sort-container:hover { border-color: var(--primary); box-shadow: 0 4px 15px rgba(13, 50, 105, 0.1); transform: translateY(-1px); }
-        .sort-container i { color: var(--primary); font-size: 14px; }
-        .sort-container .chevron-icon { font-size: 10px; color: #aaa; margin-left: auto; pointer-events: none; }
-        .modern-select { appearance: none; -webkit-appearance: none; border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-main); width: 100%; cursor: pointer; outline: none; z-index: 2; }
-
         /* --- CARDS GRID --- */
         .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding-bottom: 80px; }
         
-        /* CARD PESSOAL */
-        .element-card { background: #fff; border-radius: 20px; height: 190px; padding: 25px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-card); border: 1px solid rgba(255,255,255,0.5); opacity: 0; animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer; }
-        .element-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-hover); }
-        .card-main { transition: all 0.4s; height: 100%; display: flex; flex-direction: column; }
-        .element-card:hover .card-main { transform: translateY(-30px); opacity: 0.2; filter: blur(3px); }
-        .card-title { font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; line-height: 1.3; }
-        .card-info { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; margin-top: auto; }
-        .card-info i { color: var(--secondary); background: rgba(242, 101, 34, 0.1); padding: 8px; border-radius: 8px; }
-        
-        .card-overlay { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); display: flex; flex-direction: column; justify-content: center; align-items: center; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); padding: 20px; }
-        .element-card:hover .card-overlay { transform: translateY(0); }
-        .overlay-stat { font-size: 42px; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 5px; }
-        .overlay-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #888; margin-bottom: 20px; }
-        .overlay-btn { background: var(--secondary); color: #fff; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(242, 101, 34, 0.3); transition: transform 0.2s; display: flex; align-items: center; gap: 8px; }
-        .overlay-btn:hover { transform: scale(1.05); }
-
-        .card-actions-top { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; opacity: 0; transition: opacity 0.3s; z-index: 10; }
-        .element-card:hover .card-actions-top { opacity: 1; }
-        .icon-btn { width: 32px; height: 32px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; color: #555; }
-        .icon-btn:hover { transform: scale(1.15); color: var(--primary); }
-        .icon-btn.del:hover { color: #dc3545; }
-
-        /* CARD GLOBAL (ADM) */
+        /* CARD GLOBAL (ADM/VISUALIZADOR) */
         .adm-card { background: linear-gradient(145deg, #1a2942, #0d1b2a); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 25px; cursor: pointer; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; height: 190px; box-shadow: var(--shadow-card); opacity: 0; animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
         .adm-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, #f26522, #0d3269); opacity: 0.9; }
         .adm-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(13, 50, 105, 0.2); border-color: rgba(255,255,255,0.2); background: linear-gradient(145deg, #1f3250, #122538); }
@@ -140,7 +112,12 @@
         .icon-users { color: #00b0ff; }
         .icon-docs { color: #f26522; }
 
+        .card-overlay { position: absolute; inset: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); display: flex; flex-direction: column; justify-content: center; align-items: center; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); padding: 20px; }
         .adm-card:hover .card-overlay { transform: translateY(0); }
+        .overlay-stat { font-size: 42px; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 5px; }
+        .overlay-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #888; margin-bottom: 20px; }
+        .overlay-btn { background: var(--secondary); color: #fff; border: none; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(242, 101, 34, 0.3); transition: transform 0.2s; display: flex; align-items: center; gap: 8px; }
+        .overlay-btn:hover { transform: scale(1.05); }
 
         /* --- MODAIS --- */
         .modal { 
@@ -161,20 +138,8 @@
         .modal h2 { margin: 0; color: var(--primary); font-size: 22px; display: flex; align-items: center; gap: 10px; }
         .modal p { margin: 0; color: #666; font-size: 14px; line-height: 1.5; }
 
-        .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        input[type="text"], input[type="password"] { 
-            width: 100%; padding: 15px; 
-            border: 1px solid #e0e0e0; border-radius: 12px; 
-            background-color: #f7f9fc; 
-            font-size: 14px; outline: none; transition: all 0.3s; color: var(--text-main); 
-        }
-        input:focus, select:focus { border-color: var(--secondary); background-color: #fff; box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.1); }
-
         .modal-actions { display: flex; gap: 10px; width: 100%; margin-top: 10px; background: transparent; }
 
-        .modal-btn { background: var(--primary); color: white; padding: 14px; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 15px; transition: 0.3s; width: 100%; display: flex; justify-content: center; align-items: center; }
-        .modal-btn:hover { background: #1a4485; transform: translateY(-2px); }
         .btn-cancel { background: #f0f2f5; color: #666; border: 1px solid #ddd; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; flex: 1; transition: 0.2s; display: flex; justify-content: center; align-items: center; }
         .btn-cancel:hover { background: #e4e6eb; color: #333; }
         .btn-danger { background: #dc3545; color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; flex: 1; transition: 0.2s; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3); display: flex; justify-content: center; align-items: center; }
@@ -228,7 +193,7 @@
             <div class="nav-brand">
                 <img src="img/egaplast.png" alt="Egaplast Logo" class="nav-logo" id="logoBtn">
                 <div class="nav-title">
-                    Dashboard
+                    Dashboard Checkout
                     <small id="user-email">Carregando...</small>
                 </div>
             </div>
@@ -239,99 +204,20 @@
                     <i class="fa-solid fa-magnifying-glass search-icon-overlay"></i>
                 </div>
                 
-                <button id="tvModeBtn" class="btn-nav" title="Painel TV" style="display: none;">
-                    <i class="fa-solid fa-tv"></i> Ranking
-                </button>
-                
-                <button id="openModalBtn" class="btn-nav btn-primary">
-                    <i class="fa-solid fa-plus"></i> Novo Elemento
-                </button>
-
                 <button id="logoutBtn" class="btn-nav btn-logout" title="Sair">
                     <i class="fa-solid fa-power-off"></i>
                 </button>
             </div>
         </nav>
 
-        <div class="content-header" id="personal-header" style="display: none;">
-            <div class="header-text">
-                <h1>Olá, <strong id="user-name">...</strong></h1>
-            </div>
-            
-            <div class="sort-container">
-                <i class="fa-solid fa-arrow-down-short-wide"></i>
-                <select id="sort-select" class="modern-select">
-                    <option value="recentes">Mais Recentes</option>
-                    <option value="antigos">Mais Antigos</option>
-                    <option value="quantidade">Qtd. Documentos</option>
-                </select>
-                <i class="fa-solid fa-chevron-down chevron-icon"></i>
-            </div>
-        </div>
-
-        <div class="content-header" id="global-header" style="display: none;">
+        <div class="content-header" id="global-header" style="display: flex;">
             <div class="header-text">
                 <h1>Visão Geral por <strong>Data</strong></h1>
             </div>
         </div>
 
-        <div id="item-container" class="cards-grid" style="display: none;"></div>
+        <div id="dates-container" class="cards-grid" style="display: grid;"></div>
 
-        <div id="dates-container" class="cards-grid" style="display: none;"></div>
-
-    </div>
-
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal-btn" onclick="document.getElementById('modal').style.display='none'">&times;</span>
-            <h2><i class="fa-regular fa-folder-open"></i> Novo Elemento</h2>
-            <p>Crie um novo agrupamento para organizar pedidos.</p>
-            
-            <div id="userSelectGroup" class="form-group" style="display: none; margin-top: 10px; margin-bottom: 10px;">
-                <label>Atribuir a qual usuário?</label>
-                <select id="element-user" class="modern-select" style="background: #f7f9fc; border: 1px solid #e0e0e0; padding: 12px; border-radius: 10px; width: 100%;">
-                    <option value="">Carregando usuários...</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Nome do Elemento</label>
-                <input type="text" id="element-title" placeholder="Ex: 20/11" autocomplete="off">
-            </div>
-            
-            <button id="createElementBtn" class="modal-btn" style="margin-top: 10px;">Criar Elemento</button>
-        </div>
-    </div>
-
-    <div id="renameModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal-btn" onclick="closeRenameModal()">&times;</span>
-            <h2><i class="fa-solid fa-pen-to-square"></i> Renomear</h2>
-            <p>Digite o novo nome para este elemento.</p>
-            <input type="text" id="renameInput" placeholder="Novo título..." autocomplete="off">
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeRenameModal()">Cancelar</button>
-                <button id="confirmRenameBtn" class="modal-btn">Salvar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal-btn" onclick="closeDeleteModal()">&times;</span>
-            <h2 style="color: #dc3545;"><i class="fa-solid fa-triangle-exclamation"></i> Excluir Elemento?</h2>
-            <p>
-                Você tem certeza que deseja excluir <strong>"<span id="deleteTargetName">...</span>"</strong>?
-                <br><br>
-                <span style="font-size: 12px; color: #dc3545; background: #fff0f0; padding: 5px 10px; border-radius: 5px;">
-                    Esta ação removerá todos os documentos vinculados.
-                </span>
-            </p>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
-                <button id="confirmDeleteBtn" class="btn-danger">Sim, Excluir</button>
-            </div>
-        </div>
     </div>
 
     <div id="searchResultsModal" class="modal">
@@ -354,7 +240,7 @@
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <span class="close-modal-btn" onclick="document.getElementById('logoutConfirmModal').style.display='none'">&times;</span>
             <h2 style="justify-content: center; color: #dc3545;"><i class="fa-solid fa-right-from-bracket"></i> Sair da Plataforma?</h2>
-            <p>Você será desconectado e precisará fazer login novamente para acessar o Dashboard.</p>
+            <p>Você será desconectado e precisará fazer login novamente para acessar o sistema.</p>
             
             <div class="modal-actions" style="margin-top: 20px;">
                 <button id="cancelLogoutBtn" class="btn-cancel">Cancelar</button>
@@ -366,6 +252,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard-viewer.js"></script>
 </body>
 </html>

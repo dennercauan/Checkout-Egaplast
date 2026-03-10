@@ -8,7 +8,7 @@
     <link rel="icon" href="img/favicon.png" type="image/png">
 
     <style>
-        /* --- VARIÁVEIS GLOBAIS (Idêntico ao Dashboard) --- */
+        /* --- VARIÁVEIS GLOBAIS --- */
         :root {
             --primary: #0d3269;
             --secondary: #f26522;
@@ -16,13 +16,11 @@
             --text-main: #333333;
             --text-muted: #666666;
             --shadow-card: 0 10px 25px rgba(0,0,0,0.05);
-            --shadow-hover: 0 20px 45px rgba(13, 50, 105, 0.1);
             --success: #28a745;
             --danger: #dc3545;
             --warning: #ffc107;
         }
 
-        /* --- RESET & BASE --- */
         * { box-sizing: border-box; outline: none; }
         body { 
             background: linear-gradient(135deg, #eef2f8 0%, #fff8f5 100%);
@@ -39,26 +37,26 @@
         .app-container { width: 95%; max-width: 1600px; margin: 0 auto; padding: 20px 0; }
 
         /* --- LOADER --- */
-        #page-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 20px; transition: opacity 0.6s ease-out, visibility 0.6s; }
-        .modern-loader { position: relative; width: 70px; height: 70px; opacity: 0; animation: loaderStartUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        #page-loader { position: fixed; inset: 0; background: #ffffff; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 20px; transition: opacity 0.6s ease-out; }
+        .modern-loader { position: relative; width: 70px; height: 70px; }
         .loader-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        #app-content { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        #app-content { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s; }
         .content-visible { opacity: 1 !important; transform: translateY(0) !important; }
         
         .loader-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; }
-        .ring-1 { border-top-color: var(--primary); border-right-color: var(--primary); animation: spin-reactor 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
-        .ring-2 { inset: 8px; border-bottom-color: var(--secondary); border-left-color: var(--secondary); animation: spin-reactor 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite reverse; }
-        .loader-core { position: absolute; inset: 30px; background: #e0e0e0; border-radius: 50%; animation: pulse-reactor 1.5s ease-in-out infinite; }
-        .loader-text { color: var(--primary); font-size: 14px; letter-spacing: 4px; text-transform: uppercase; font-weight: 700; opacity: 0; animation: fadeInText 1s ease-out 0.3s forwards; }
+        .ring-1 { border-top-color: var(--primary); border-right-color: var(--primary); animation: spin-reactor 1.5s infinite; }
+        .ring-2 { inset: 8px; border-bottom-color: var(--secondary); border-left-color: var(--secondary); animation: spin-reactor 1.2s infinite reverse; }
+        .loader-core { position: absolute; inset: 30px; background: #e0e0e0; border-radius: 50%; animation: pulse-reactor 1.5s infinite; }
+        .loader-text { color: var(--primary); font-size: 14px; letter-spacing: 4px; text-transform: uppercase; font-weight: 700; margin-top: 15px;}
 
         /* --- NAVBAR --- */
         .modern-navbar {
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px);
             border: 1px solid rgba(255,255,255,0.8); border-radius: 20px; padding: 12px 30px; display: flex; justify-content: space-between;
-            align-items: center; box-shadow: 0 8px 30px rgba(0,0,0,0.04); position: sticky; top: 20px; z-index: 100; margin-bottom: 40px;
+            align-items: center; box-shadow: 0 8px 30px rgba(0,0,0,0.04); position: sticky; top: 20px; z-index: 100; margin-bottom: 25px;
         }
         .nav-brand { display: flex; align-items: center; gap: 15px; }
-        .nav-logo { height: 42px; width: auto; transition: transform 0.3s ease; cursor: pointer; }
+        .nav-logo { height: 42px; width: auto; cursor: pointer; transition: transform 0.3s ease; }
         .nav-logo:hover { transform: scale(1.08); }
         .nav-title { color: var(--primary); font-size: 16px; font-weight: 700; border-left: 2px solid #ddd; padding-left: 15px; line-height: 1.2; }
         .nav-title small { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; letter-spacing: 0.5px; }
@@ -68,89 +66,98 @@
         .btn-nav:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-color: #ddd; }
         .btn-primary { background: var(--primary); color: #fff; border: none; box-shadow: 0 4px 12px rgba(13, 50, 105, 0.2); }
         .btn-primary:hover { background: #163d75; box-shadow: 0 6px 18px rgba(13, 50, 105, 0.3); }
-        .btn-logout { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; color: #dc3545; border-color: rgba(220, 53, 69, 0.1); background: rgba(220, 53, 69, 0.05); }
+        .btn-logout { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; color: #dc3545; background: rgba(220, 53, 69, 0.05); }
         .btn-logout:hover { background: #dc3545; color: white; }
 
-        /* --- HEADER DO CONTEÚDO --- */
-        .content-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; padding: 0 10px; }
-        .header-text h1 { color: var(--primary); font-size: 28px; font-weight: 300; margin: 0; letter-spacing: -0.5px; }
+        /* NOTIFICAÇÃO BELL */
+        .notification-wrapper { position: relative; cursor: pointer; margin-right: 5px; display: none; }
+        .nav-btn-notif { background: transparent; border: none; color: var(--text-main); font-size: 20px; transition: 0.2s; cursor: pointer; }
+        .nav-btn-notif:hover { color: var(--secondary); transform: scale(1.1); }
+        .badge-count { position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 50%; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .badge-visible { opacity: 1; }
+
+        /* --- HEADER DO CONTEÚDO E TOOLTIP (Z-INDEX CORRIGIDO) --- */
+        .content-header { 
+            display: flex; justify-content: space-between; align-items: flex-end; 
+            margin-bottom: 25px; padding: 0 10px; 
+            position: relative; z-index: 100; /* ESSA LINHA RESOLVE A SOBREPOSIÇÃO DA TABELA */
+        }
+        .header-text h1 { color: var(--primary); font-size: 24px; font-weight: 300; margin: 0; letter-spacing: -0.5px; }
         .header-text h1 strong { font-weight: 800; }
         
-        .stats-container { z-index: 100; position: relative; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 8px 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); cursor: pointer; transition: all 0.3s; }
+        .stats-container { position: relative; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 8px 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); cursor: pointer; transition: all 0.3s; }
         .stats-container:hover { border-color: var(--secondary); transform: translateY(-2px); }
         .stats-number { background: var(--secondary); color: white; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 14px; }
         
         /* Tooltip Customizado */
-        .custom-tooltip { 
-            display: none; position: absolute; top: 130%; right: 0; width: 260px; 
-            background: #ffffff; padding: 20px; border-radius: 15px; 
-            box-shadow: 0 15px 50px rgba(0,0,0,0.15); border: 1px solid #eee; 
-            z-index: 9999; font-size: 13px; animation: fadeIn 0.2s; 
-        }
-        .custom-tooltip::before { content: ''; position: absolute; bottom: 100%; right: 20px; border: 8px solid transparent; border-bottom-color: #fff; }
+        .custom-tooltip { display: none; position: absolute; top: 130%; left: 0; width: 260px; background: #ffffff; padding: 20px; border-radius: 15px; box-shadow: 0 15px 50px rgba(0,0,0,0.15); border: 1px solid #eee; z-index: 9999; font-size: 13px; animation: fadeIn 0.2s; }
+        .custom-tooltip::before { content: ''; position: absolute; bottom: 100%; left: 20px; border: 8px solid transparent; border-bottom-color: #fff; }
         .stats-container:hover .custom-tooltip { display: block; }
         .tooltip-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f5f5f5; color: #555; }
-        .tooltip-row:last-child { border-bottom: none; }
         .tooltip-row span.val { font-weight: 700; color: var(--primary); }
 
+        /* --- WIDGETS ADM --- */
+        #admin-widgets { display: none; margin-bottom: 25px; animation: fadeInUp 0.6s ease-out; }
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .widget-box { background: #fff; border-radius: 20px; padding: 25px; box-shadow: var(--shadow-card); border: 1px solid rgba(255,255,255,0.5); }
+        .widget-title { margin-top: 0; color: var(--primary); display: flex; align-items: center; gap: 10px; font-size: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .ordem-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+
         /* --- TABELA MODERNA --- */
-        .table-container {
-            background: #ffffff; border-radius: 20px; box-shadow: var(--shadow-card); overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.5); animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            z-index: 1;
-        }
-        
+        .table-container { background: #ffffff; border-radius: 20px; box-shadow: var(--shadow-card); overflow: hidden; border: 1px solid rgba(255,255,255,0.5); animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; position: relative; z-index: 1;}
         table { width: 100%; border-collapse: collapse; border-spacing: 0; }
         thead { background: #f8f9fa; border-bottom: 2px solid #e9ecef; }
         th { text-align: left; padding: 18px 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
-        
-        tbody tr { border-bottom: 1px solid #f0f0f0; transition: all 0.2s; opacity: 0; animation: fadeInUp 0.5s forwards; cursor: pointer; }
+        tbody tr { border-bottom: 1px solid #f0f0f0; transition: all 0.2s; cursor: pointer; }
         tbody tr:last-child { border-bottom: none; }
-        tbody tr:hover { background-color: #fcfcfc; transform: scale(1.005); box-shadow: 0 4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative; }
-        
+        tbody tr:hover { background-color: #fcfcfc; transform: scale(1.002); box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
         td { padding: 16px 20px; font-size: 14px; color: var(--text-main); vertical-align: middle; }
         td strong { color: var(--primary); font-weight: 600; }
         
-        /* Status e Pílulas */
         .doc-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: #eef2f8; color: var(--primary); margin-right: 5px; margin-bottom: 4px; border: 1px solid #dde5f0; }
         .doc-pill small { opacity: 0.7; font-weight: 400; margin-left: 4px; }
-        
         tr.efetivado td { background-color: #f0fff4; color: #155724; }
         tr.efetivado td strong { color: #155724; }
         tr.efetivado .doc-pill { background: #d4edda; color: #155724; border-color: #c3e6cb; }
 
-        /* Botões de Ação na Tabela */
+        .monday-check-label { display: inline-flex; align-items: center; gap: 5px; background: #f8f9fa; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #666; cursor: pointer; transition: 0.2s; }
+        .monday-check-label:hover { background: #eef2f8; border-color: var(--primary); }
+
         .action-btn { width: 32px; height: 32px; border-radius: 8px; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; margin-right: 4px; }
         .action-btn:hover { transform: translateY(-2px); }
         .btn-edit { background: #fff3cd; color: #856404; }
         .btn-caixas { background: #e0f2f1; color: #00695c; }
         .btn-del { background: #f8d7da; color: #721c24; }
         .btn-check { background: #d4edda; color: #155724; }
+        .btn-copy { background: #e3f2fd; color: #0d47a1; }
+
+        /* --- SIDEBAR LOGS (TEMA LIGHT) --- */
+        .logs-sidebar { position: fixed; top: 0; right: -400px; width: 380px; height: 100%; background: #ffffff; box-shadow: -5px 0 30px rgba(0,0,0,0.1); z-index: 99999; transition: right 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; border-left: 1px solid #eee; }
+        .logs-sidebar.open { right: 0; }
+        .logs-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; }
+        .logs-header h3 { margin: 0; color: var(--primary); font-size: 16px; display: flex; align-items: center; gap: 10px; }
+        .logs-content { flex: 1; overflow-y: auto; padding: 0; }
+        .log-item { padding: 15px 20px; border-bottom: 1px solid #eee; border-left: 4px solid transparent; transition: background 0.2s; }
+        .log-item:hover { background: #fcfcfc; }
+        .log-header { display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-bottom: 5px; }
+        .log-title { color: var(--text-main); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+        .log-detail { color: #666; font-size: 12px; }
+        .log-high-priority { background: rgba(242, 101, 34, 0.02); border-left-color: var(--secondary); }
+        .log-success { border-left-color: var(--success); }
+        .btn-close-sidebar { background: none; border: none; font-size: 24px; color: #aaa; cursor: pointer; transition: 0.2s; }
+        .btn-close-sidebar:hover { color: var(--danger); }
 
         /* --- MODAIS --- */
-        .modal { 
-            display: none; position: fixed; z-index: 9999; inset: 0; width: 100%; height: 100%;
-            background-color: rgba(13, 50, 105, 0.6); backdrop-filter: blur(5px); 
-            align-items: center; justify-content: center; animation: fadeIn 0.3s; 
-        }
-        .modal-content { 
-            background-color: #ffffff; padding: 35px; width: 90%; max-width: 550px; 
-            border-radius: 20px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); 
-            position: relative; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
-            display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;
-        }
-        .modal-lg { max-width: 900px; } /* Modal maior para caixas */
+        .modal { display: none; position: fixed; z-index: 9999; inset: 0; width: 100%; height: 100%; background-color: rgba(13, 50, 105, 0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; animation: fadeIn 0.3s; }
+        .modal-content { background-color: #ffffff; padding: 35px; width: 90%; max-width: 550px; border-radius: 20px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); position: relative; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto; }
+        .modal-lg { max-width: 900px; } 
 
         .modal h2 { margin: 0 0 10px 0; color: var(--primary); font-size: 22px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
         
         .form-group { margin-bottom: 5px; }
         .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        input[type="text"], input[type="number"], select, textarea { 
-            width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; 
-            background-color: #f9f9f9; font-size: 14px; outline: none; transition: all 0.3s; 
-            color: var(--text-main); font-family: inherit;
-        }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9; font-size: 14px; outline: none; transition: all 0.3s; color: var(--text-main); font-family: inherit; }
         textarea { resize: vertical; min-height: 80px; }
         input:focus, select:focus, textarea:focus { border-color: var(--secondary); background-color: #fff; box-shadow: 0 0 0 4px rgba(242, 101, 34, 0.1); }
 
@@ -159,12 +166,14 @@
         .modal-btn:hover { background: #1a4485; transform: translateY(-2px); }
         .btn-cancel { background: #f0f2f5; color: #666; border: 1px solid #ddd; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 600; flex: 1; transition: 0.2s; }
         .btn-cancel:hover { background: #e4e6eb; }
+        .close-modal-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; color: #ccc; cursor: pointer; transition: 0.2s; }
+        .close-modal-btn:hover { color: var(--text-main); }
 
-        /* --- ESTILOS ESPECÍFICOS DO MODAL DE CAIXAS --- */
+        /* ESTILOS DO MODAL DE CAIXAS */
         .caixas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 15px; }
         .doc-section { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         .doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f5f5f5; padding-bottom: 10px; }
-        .doc-header h4 { margin: 0; color: var(--primary); font-size: 15px; }
+        .doc-header h4 { margin: 0; color: var(--primary); font-size: 15px; line-height: 1.3; }
         
         .btn-add-manual { border: 2px dashed #ddd; background: #fafafa; color: #888; width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; margin-bottom: 10px; }
         .btn-add-manual:hover { border-color: var(--secondary); color: var(--secondary); background: #fff; }
@@ -181,37 +190,76 @@
         
         .bonificacao-star { cursor: pointer; font-size: 16px; color: #ccc; transition: 0.2s; }
         .bonificacao-star.active { color: var(--secondary); transform: scale(1.2); }
-.btn-copy { background: #e3f2fd; color: #0d47a1; }
-.btn-copy:hover { background: #bbdefb; }
 
-        /* --- ANIMAÇÕES --- */
+        /* --- PAINEL DROPDOWN DE RANKING --- */
+        .ranking-dropdown-wrapper { position: relative; }
+        .ranking-dropdown-panel {
+            display: none; position: absolute; top: calc(100% + 15px); right: 0;
+            width: 700px; background: #fff; border-radius: 16px; border: 1px solid #eee;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15); z-index: 1000;
+            transform-origin: top right; 
+            animation: dropInElastic 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+            cursor: default;
+        }
+        .ranking-dropdown-panel::before {
+            content: ''; position: absolute; top: -8px; right: 40px;
+            border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid #fffbea;
+        }
+        .ranking-dropdown-panel.show { display: block; }
+        
+        .ranking-panel-header { 
+            padding: 20px; border-bottom: 1px solid #ffeeba; 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #fffbea; border-radius: 16px 16px 0 0; 
+        }
+        .ranking-panel-header h3 { margin: 0; color: #856404; font-size: 16px; display: flex; align-items: center; gap: 8px;}
+        .close-panel { font-size: 22px; color: #856404; cursor: pointer; transition: 0.2s; opacity: 0.5; }
+        .close-panel:hover { opacity: 1; transform: scale(1.1); }
+        
+        .ranking-panel-body { 
+            padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
+            max-height: 65vh; overflow-y: auto; background: #fafafa; border-radius: 0 0 16px 16px;
+        }
+        .ranking-col { background: #fff; border: 1px solid #eee; padding: 18px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .ranking-col h4 { margin: 0 0 15px 0; color: var(--primary); font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 10px; display: flex; align-items: center; gap: 6px;}
+        
+        /* --- MONDAY VERIFIED (MESMO VERDE DE FINALIZADO) --- */
+        tr.monday-verified td { 
+            background-color: #f0fff4 !important; 
+            color: #155724 !important; 
+        }
+        tr.monday-verified td strong { color: #155724 !important; }
+        tr.monday-verified .doc-pill { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+        tr.monday-verified td strong { color: #0f5132 !important; }
+        tr.monday-verified .doc-pill { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+        tr.monday-verified td strong { color: #0d47a1 !important; }
+        tr.monday-verified .doc-pill { background: #bbdefb; color: #0d47a1; border-color: #90caf9; }
+
+        /* --- PEDIDOS EM ANDAMENTO (ADMIN) --- */
+        .ongoing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .ongoing-card { background: #fff; border-left: 4px solid var(--secondary); border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s;}
+        .ongoing-card:hover { transform: translateY(-3px); }
+        .ongoing-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .ongoing-time { font-family: monospace; font-size: 16px; font-weight: bold; color: var(--secondary); display: flex; align-items: center; gap: 6px; }
+        .pulse-dot { width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; animation: pulse 1.5s infinite; }
+        .ongoing-body { font-size: 12px; color: #555; display: flex; flex-direction: column; gap: 4px; }
+        .ongoing-body strong { color: var(--primary); }
+
+        @keyframes dropInElastic { 
+            from { opacity: 0; transform: scale(0.8) translateY(-20px); } 
+            to { opacity: 1; transform: scale(1) translateY(0); } 
+        }
+
+        /* ANIMAÇÕES */
         @keyframes popIn { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes loaderStartUp { from { opacity: 0; transform: scale(0.5) rotate(-45deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
-        @keyframes fadeInText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin-reactor { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse-reactor { 0%, 100% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } }
-        /* --- ANIMAÇÕES DE SAÍDA (NOVO) --- */
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-@keyframes popOut { from { transform: scale(1) translateY(0); opacity: 1; } to { transform: scale(0.95) translateY(10px); opacity: 0; } }
-
-
-/* Classe auxiliar para quando o modal estiver fechando */
-.modal-closing {
-    animation: fadeOut 0.3s forwards !important;
-}
-
-.modal-closing .modal-content {
-    animation: popOut 0.3s forwards !important;
-}
         
-        /* Responsividade básica */
-        @media (max-width: 768px) {
-            .content-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .table-container { overflow-x: auto; }
-            .nav-title small { display: none; }
-        }
+        .modal-closing { animation: fadeOut 0.3s forwards !important; }
+        .modal-closing .modal-content { animation: popOut 0.3s forwards !important; }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes popOut { from { transform: scale(1) translateY(0); opacity: 1; } to { transform: scale(0.95) translateY(10px); opacity: 0; } }
     </style>
 </head>
 <body class="loading-active">
@@ -222,7 +270,7 @@
             <div class="loader-ring ring-2"></div>
             <div class="loader-core"></div>
         </div>
-        <div class="loader-text">Carregando Pedidos...</div>
+        <div class="loader-text" id="loaderTextMsg">Carregando Pedidos...</div>
     </div>
 
     <div id="app-content" class="app-container">
@@ -237,6 +285,11 @@
             </div>
 
             <div class="nav-actions">
+                <div class="notification-wrapper" id="notifBtnWrapper" onclick="toggleLogsSidebar()">
+                    <button class="nav-btn-notif"><i class="fa-regular fa-bell"></i></button>
+                    <span id="notifBadge" class="badge-count">0</span>
+                </div>
+
                 <button id="voltarBtn" class="btn-nav">
                     <i class="fa-solid fa-arrow-left"></i> Voltar
                 </button>
@@ -254,18 +307,50 @@
             
             <div class="nav-actions">
                 <div class="stats-container">
-                    <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i>
-                    <span style="font-size: 13px; font-weight: 600;">Total:</span>
-                    <span class="stats-number" id="totalPedidosVisor">0</span>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div title="Total de Documentos" style="display: flex; align-items: center; gap: 5px;">
+                            <i class="fa-solid fa-file-invoice" style="color: var(--primary);"></i>
+                            <span style="font-size: 13px; font-weight: 600;">Pedidos:</span>
+                            <span class="stats-number" id="totalPedidosVisor">0</span>
+                        </div>
+                        <div title="Total de Caixas" style="display: flex; align-items: center; gap: 5px; border-left: 1px solid #eee; padding-left: 15px;">
+                            <i class="fa-solid fa-boxes-stacked" style="color: var(--secondary);"></i>
+                            <span style="font-size: 13px; font-weight: 600;">Caixas:</span>
+                            <span class="stats-number" id="totalCaixasVisor" style="background: var(--secondary);">0</span>
+                        </div>
+                    </div>
                     
-                    <div id="detalhesTooltip" class="custom-tooltip">
-                        <div class="tooltip-row"><span>Nota Fiscal</span><span class="val">0</span></div>
-                        <div class="tooltip-row"><span>Bonificação</span><span class="val">0</span></div>
-                        <div class="tooltip-row"><span>Minuta</span><span class="val">0</span></div>
+                    <div id="detalhesTooltip" class="custom-tooltip" style="right: auto; left: 0;">
+                        <div class="tooltip-row"><span>Nota Fiscal</span><span class="val" id="ttNf">0</span></div>
+                        <div class="tooltip-row"><span>Bonificação</span><span class="val" id="ttBonif">0</span></div>
+                        <div class="tooltip-row"><span>Minuta</span><span class="val" id="ttMinuta">0</span></div>
                         <div style="border-top: 1px solid #eee; margin: 8px 0;"></div>
-                        <div class="tooltip-row"><span>Caixas (Padrão)</span><span class="val">0</span></div>
-                        <div class="tooltip-row"><span>Caixas (Bônus)</span><span class="val">0</span></div>
+                        <div class="tooltip-row"><span>Caixas (Padrão)</span><span class="val" id="ttCx">0</span></div>
+                        <div class="tooltip-row"><span>Caixas (Bônus)</span><span class="val" id="ttCxB">0</span></div>
                         <div id="caixasDetalhadasList" style="margin-top: 10px; font-size: 11px;"></div>
+                    </div>
+                </div>
+
+                <div class="ranking-dropdown-wrapper">
+                    <button id="btnRankingUser" class="btn-nav" style="background: #fff; border-color: #FFD700; color: #856404;" onclick="toggleRankingDropdown(event)">
+                        <i class="fa-solid fa-trophy" style="color: #FFD700;"></i> Desempenho
+                    </button>
+
+                    <div id="rankingDropdownPanel" class="ranking-dropdown-panel">
+                        <div class="ranking-panel-header">
+                            <h3><i class="fa-solid fa-trophy"></i> Desempenho Geral de Hoje</h3>
+                            <span class="close-panel" onclick="toggleRankingDropdown(event)">&times;</span>
+                        </div>
+                        <div class="ranking-panel-body">
+                            <div class="ranking-col">
+                                <h4><i class="fa-solid fa-cubes" style="color: var(--secondary);"></i>Ranking</h4>
+                                <div id="userSideSkus" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                            </div>
+                            <div class="ranking-col">
+                                <h4><i class="fa-solid fa-file-invoice" style="color: var(--primary);"></i> Pedidos/Ordens</h4>
+                                <div id="userSideDocs" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -276,6 +361,16 @@
                 <button id="abrirOrdensBtn" class="btn-nav">
                     <i class="fa-solid fa-clipboard-list"></i> Ordens
                 </button>
+            </div>
+        </div>
+
+        <div id="admin-widgets">
+            <div class="widget-box" style="margin-bottom: 20px; border: 1px solid #eee;">
+                <h3 class="widget-title" style="color: var(--secondary); border-bottom: none; margin-bottom: 10px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Pedidos em Andamento
+                </h3>
+                <div id="ongoingOrdersContainer" class="ongoing-grid">
+                    </div>
             </div>
         </div>
 
@@ -292,18 +387,40 @@
                         <th style="text-align: right;">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="multiOrdersTableBody">
-                    </tbody>
+                <tbody id="multiOrdersTableBody"></tbody>
             </table>
         </div>
 
     </div>
 
+    <div id="logsSidebar" class="logs-sidebar">
+        <div class="logs-header">
+            <h3><i class="fa-solid fa-list-ul" style="color:var(--secondary);"></i> Registro de Atividades</h3>
+            <button class="btn-close-sidebar" onclick="toggleLogsSidebar()">&times;</button>
+        </div>
+        <div id="logsList" class="logs-content">
+        </div>
+    </div>
+
     <div id="multiPopupOverlay" class="modal">
         <div class="modal-content">
-            <span class="close-modal-btn" id="fecharMultiBtn" style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:20px;">&times;</span>
+            <span class="close-modal-btn" id="fecharMultiBtn">&times;</span>
             <h2 id="multiPopupTitle"><i class="fa-solid fa-file-invoice"></i> Novo Pedido</h2>
             
+            <div id="adminAssignGroup" style="display:none; background:#eef2f8; padding:15px; border-radius:10px; border:1px solid #dde5f0; margin-bottom:15px;">
+                <h4 style="margin:0 0 10px 0; color:var(--primary); font-size:13px; text-transform:uppercase;"><i class="fa-solid fa-user-shield"></i> Atribuição (Admin)</h4>
+                <div style="display:flex; gap:10px;">
+                    <div class="form-group" style="flex:1;">
+                        <label>Usuário Dono</label>
+                        <select id="admTargetUser" style="background:#fff; border-radius: 8px; padding: 10px;"></select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Projeto (Pasta)</label>
+                        <select id="admTargetElement" style="background:#fff; border-radius: 8px; padding: 10px;" disabled><option value="">Selecione um usuário...</option></select>
+                    </div>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 15px;">
                 <div class="form-group" style="flex: 1;">
                     <label>Nº Romaneio</label>
@@ -336,16 +453,26 @@
 
             <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-top: 5px;">
                 <h4 style="margin: 0 0 10px 0; color: var(--primary); font-size: 14px;">Adicionar Documento</h4>
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <select id="multiDocTipo" style="flex: 1;">
-                        <option value="Nota Fiscal">Nota Fiscal</option>
-                        <option value="Troca">Troca</option>
-                        <option value="Bonificação">Bonificação</option>
-                        <option value="Minuta">Minuta</option>
-                    </select>
-                    <select id="multiDocResponsavel" style="flex: 1;"></select>
+                
+                <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #666;">Tipo</label>
+                        <select id="multiDocTipo" style="padding: 10px; font-size: 13px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <option value="Nota Fiscal">Nota Fiscal</option>
+                            <option value="Troca">Troca</option>
+                            <option value="Bonificação">Bonificação</option>
+                            <option value="Minuta">Minuta</option>
+                        </select>
+                    </div>
+                    
+                    <div style="flex: 1.5; display: flex; flex-direction: column; gap: 5px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #666;">Responsável(is)</label>
+                        <div id="responsaveisContainer" style="display: flex; flex-direction: column; gap: 5px;">
+                            </div>
+                    </div>
                 </div>
-                <button id="addDocumentoBtn" style="width: 100%; background: #e9ecef; color: #333; border: 1px solid #ddd; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                
+                <button id="addDocumentoBtn" style="width: 100%; background: #e9ecef; color: #333; border: 1px solid #ddd; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: 0.2s;">
                     <i class="fa-solid fa-plus"></i> Adicionar à Lista
                 </button>
                 
@@ -361,18 +488,15 @@
 
     <div id="caixasPopup" class="modal">
         <div class="modal-content modal-lg">
-            <span class="close-modal-btn" id="fecharCaixasBtn" style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:24px;">&times;</span>
+            <span class="close-modal-btn" id="fecharCaixasBtn">&times;</span>
             <h2 id="caixasPopupTitle"><i class="fa-solid fa-boxes-stacked"></i> Caixas do Pedido</h2>
-            
-            <div id="listaCaixasContainer" class="caixas-grid">
-                </div>
+            <div id="listaCaixasContainer" class="caixas-grid"></div>
         </div>
     </div>
 
     <div id="addCaixaModal" class="modal">
         <div class="modal-content" style="max-width: 380px;">
             <h3><i class="fa-solid fa-box-open"></i> Nova Caixa Manual</h3>
-            
             <div class="form-group">
                 <label>Identificação (Nº)</label>
                 <input type="text" id="numCaixa" placeholder="Ex: Cx 1" autocomplete="off">
@@ -385,7 +509,6 @@
                 <label>Quantidade</label>
                 <input type="number" id="quantidadeCaixa" value="1" min="1">
             </div>
-            
             <div class="modal-actions">
                 <button class="btn-cancel" id="cancelAddCaixaBtn">Cancelar</button>
                 <button class="modal-btn" id="addCaixaBtn">Adicionar</button>
@@ -395,28 +518,69 @@
 
     <div id="popupOrdens" class="modal">
         <div class="modal-content" style="max-width: 450px;">
-            <span class="close-modal-btn" id="fecharPopupOrdens" style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:20px;">&times;</span>
+            <span class="close-modal-btn" id="fecharPopupOrdens">&times;</span>
             <h2><i class="fa-solid fa-clipboard-list"></i> Ordens de Produção</h2>
             
+            <div id="adminAssignOrdemGroup" style="display:none; background:#eef2f8; padding:15px; border-radius:10px; border:1px solid #dde5f0; margin-bottom:15px;">
+                <h4 style="margin:0 0 10px 0; color:var(--primary); font-size:13px; text-transform:uppercase;"><i class="fa-solid fa-user-shield"></i> Atribuir Ordem</h4>
+                <div style="display:flex; gap:10px;">
+                    <div class="form-group" style="flex:1;">
+                        <label>Usuário Dono</label>
+                        <select id="admOrdemUser" style="background:#fff; border-radius: 8px; padding: 10px;"></select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Projeto (Pasta)</label>
+                        <select id="admOrdemElement" style="background:#fff; border-radius: 8px; padding: 10px;" disabled><option value="">Selecione um usuário...</option></select>
+                    </div>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="inputOrdem" placeholder="Nº do Romaneio..." autocomplete="off">
                 <button id="salvarOrdemBtn" class="modal-btn" style="width: auto; padding: 0 20px;">Add</button>
             </div>
             
-            <ul id="listaOrdens" style="list-style: none; padding: 0; margin-top: 20px; max-height: 300px; overflow-y: auto;">
-                </ul>
+            <ul id="listaOrdens" style="list-style: none; padding: 0; margin-top: 20px; max-height: 300px; overflow-y: auto;"></ul>
         </div>
     </div>
 
     <div id="logoutConfirmModal" class="modal">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <span id="closeLogoutModal" class="close-modal-btn" style="position:absolute; right:20px; top:20px; cursor:pointer;">&times;</span>
+            <span id="closeLogoutModal" class="close-modal-btn">&times;</span>
             <h2 style="justify-content: center; color: #dc3545;"><i class="fa-solid fa-right-from-bracket"></i> Sair da Plataforma?</h2>
             <p>Você será desconectado e precisará fazer login novamente.</p>
-            
             <div class="modal-actions">
                 <button id="cancelLogoutBtn" class="btn-cancel">Cancelar</button>
                 <button id="confirmLogoutBtn" class="modal-btn" style="background: #dc3545;">Sim, Sair</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmCsvModal" class="modal">
+        <div class="modal-content" style="max-width: 420px; text-align: center;">
+            <span class="close-modal-btn" onclick="fecharModal(document.getElementById('confirmCsvModal'))">&times;</span>
+            <h2 style="justify-content: center; color: var(--primary); border-bottom: none; padding-bottom: 0;"><i class="fa-solid fa-file-csv"></i> Confirmar Importação</h2>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 15px 0; text-align: left; border: 1px solid #eee;">
+                <p style="margin: 0 0 10px 0; color: #555; font-size: 13px;"><strong>Arquivo:</strong> <span id="csvFileNameDisplay" style="color: var(--primary);">...</span></p>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 10px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 20px; font-weight: 900; color: var(--secondary);" id="csvTotalCaixasDisplay">0</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #888;">Caixas</div>
+                    </div>
+                    <div style="border-left: 1px solid #eee;"></div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 20px; font-weight: 900; color: #856404;" id="csvTotalSkusDisplay">0</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #888;">SKUs</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Deseja importar os dados salvos nesse arquivo?</p>
+            
+            <div class="modal-actions">
+                <button class="btn-cancel" id="cancelCsvBtn">Cancelar</button>
+                <button class="modal-btn" id="confirmCsvBtn" style="background: var(--success);">Sim, Importar</button>
             </div>
         </div>
     </div>
