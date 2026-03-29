@@ -1617,3 +1617,626 @@ function getSafeTimestamp(obj) {
     if (obj.createdAt instanceof Date) return obj.createdAt.getTime();
     return obj.createdAt;
 }
+
+// --- VARIÁVEIS GLOBAIS CAIXAS MASTER ---
+let dadosCaixasMaster = [];
+let produtoEditandoId = null; // Guarda o ID se for editar
+
+// --- REFERÊNCIAS DO DOM ---
+const modalMasterOverlay = document.getElementById('modalCaixasMasterOverlay');
+const modalListaMaster = document.getElementById('modalListaMaster');
+const modalVariacoesMaster = document.getElementById('modalVariacoesMaster');
+const buscaRefMaster = document.getElementById('buscaRefMaster');
+const adminMasterActions = document.getElementById('adminMasterActions');
+const colunasAdmMaster = document.querySelectorAll('.coluna-adm-master');
+
+// APAGUE A LINHA ANTIGA DO btnAbrirCaixasMaster SE ELA ESTIVER AQUI!
+
+// --- CSS DAS ANIMAÇÕES (ATUALIZADO) ---
+const styleAnimMaster = document.createElement('style');
+styleAnimMaster.innerHTML = `
+    @keyframes fadeInMaster { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOutMaster { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes popInMaster { 
+        0% { opacity: 0; transform: scale(0.95) translateY(15px); } 
+        100% { opacity: 1; transform: scale(1) translateY(0); } 
+    }
+    @keyframes popOutMaster { 
+        0% { opacity: 1; transform: scale(1) translateY(0); } 
+        100% { opacity: 0; transform: scale(0.95) translateY(15px); } 
+    }
+    .master-overlay-anim-in { animation: fadeInMaster 0.4s ease-out forwards; }
+    .master-overlay-anim-out { animation: fadeOutMaster 0.4s ease-in forwards; }
+    .master-box-anim-in { animation: popInMaster 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .master-box-anim-out { animation: popOutMaster 0.4s ease-in forwards; }
+    
+    /* Efeito para a linha clicável */
+    .tr-master-hover:hover { background-color: #f0f4f8 !important; transition: background 0.2s; }
+`;
+document.head.appendChild(styleAnimMaster);
+
+// --- CRIAÇÃO AUTOMÁTICA DO BOTÃO E EVENT LISTENERS ---
+
+// 1. Cria o botão dinamicamente (Agora sim, declarando apenas uma vez)
+const btnAbrirCaixasMaster = document.createElement('button');
+btnAbrirCaixasMaster.id = 'btnAbrirCaixasMaster';
+btnAbrirCaixasMaster.title = 'Consultar Caixas Master';
+btnAbrirCaixasMaster.style.cssText = 'background: var(--primary, #0d3269); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: bold; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;';
+btnAbrirCaixasMaster.innerHTML = '<i class="fa-solid fa-box-open"></i> Caixas Master';
+
+// Efeito de hover básico
+btnAbrirCaixasMaster.onmouseover = () => btnAbrirCaixasMaster.style.transform = 'scale(1.05)';
+btnAbrirCaixasMaster.onmouseout = () => btnAbrirCaixasMaster.style.transform = 'scale(1)';
+
+// 2. Tenta inserir do lado do botão "Ordens"
+const btnOrdens = document.getElementById('abrirOrdensBtn');
+if (btnOrdens && btnOrdens.parentElement) {
+    btnOrdens.parentElement.insertBefore(btnAbrirCaixasMaster, btnOrdens);
+} else {
+    // Se não achar o botão "Ordens", insere do lado do botão "Voltar"
+    const btnVoltar = document.getElementById('voltarBtn');
+    if (btnVoltar && btnVoltar.parentElement) {
+        btnVoltar.parentElement.insertBefore(btnAbrirCaixasMaster, btnVoltar);
+    }
+}
+
+btnAbrirCaixasMaster.addEventListener('click', () => {
+    // Adiciona as classes de entrada
+    modalMasterOverlay.classList.remove('master-overlay-anim-out');
+    modalListaMaster.classList.remove('master-box-anim-out');
+    
+    modalMasterOverlay.classList.add('master-overlay-anim-in');
+    modalListaMaster.classList.add('master-box-anim-in');
+    
+    modalMasterOverlay.style.display = 'flex';
+    modalListaMaster.style.display = 'block';
+    modalVariacoesMaster.style.display = 'none';
+    
+    if(isAdmin) {
+        adminMasterActions.style.display = 'block';
+        colunasAdmMaster.forEach(col => col.style.display = 'table-cell');
+    }
+    
+    carregarDadosMaster();
+    buscaRefMaster.focus();
+});
+
+// Ação de busca
+buscaRefMaster.addEventListener('keyup', (e) => {
+    const termo = e.target.value.toLowerCase();
+    const filtrados = dadosCaixasMaster.filter(p => p.ref.toLowerCase().includes(termo));
+    renderizarTabelaMaster(filtrados);
+});
+
+buscaRefMaster.addEventListener('keyup', (e) => {
+    const termo = e.target.value.toLowerCase();
+    const filtrados = dadosCaixasMaster.filter(p => p.ref.toLowerCase().includes(termo));
+    renderizarTabelaMaster(filtrados);
+});
+
+// Fechar o modal principal inteiro
+window.fecharModalMaster = function() {
+    modalMasterOverlay.classList.remove('master-overlay-anim-in');
+    modalMasterOverlay.classList.add('master-overlay-anim-out');
+    
+    if (modalListaMaster.style.display !== 'none') {
+        modalListaMaster.classList.remove('master-box-anim-in');
+        modalListaMaster.classList.add('master-box-anim-out');
+    } else if (modalVariacoesMaster.style.display !== 'none') {
+        modalVariacoesMaster.classList.remove('master-box-anim-in');
+        modalVariacoesMaster.classList.add('master-box-anim-out');
+    }
+
+    // Aumentamos o tempo para 400ms para acompanhar o novo CSS
+    setTimeout(() => {
+        modalMasterOverlay.style.display = 'none';
+        buscaRefMaster.value = '';
+    }, 400); 
+}
+
+// Transição da Lista para as Variações
+window.abrirVariacoesMaster = function(produto) {
+    document.getElementById('varProdNome').textContent = produto.nome;
+    document.getElementById('varProdRef').textContent = produto.ref;
+    
+    const container = document.getElementById('cardsVariacoesContainer');
+    container.innerHTML = '';
+    
+    if(!produto.variacoes || produto.variacoes.length === 0) {
+        container.innerHTML = '<p style="color:#999;">Nenhuma variação cadastrada para este produto.</p>';
+    } else {
+        produto.variacoes.forEach(vr => {
+            const card = document.createElement('div');
+            card.style.cssText = "background:#fff; border-radius:12px; padding:20px; width:220px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.05); border:1px solid #eee;";
+            card.innerHTML = `
+                <h3 style="margin:0 0 5px 0; font-size:16px; color:#333;">${vr.caixa} (${vr.quantidade})</h3>
+                <p style="margin:0 0 15px 0; font-size:14px; color:#666; font-weight:bold;">Peso: ${vr.peso}</p>
+                <div style="font-size:12px; color:#888; margin-bottom:8px;">CÓDIGO: ${vr.codigoBarras}</div>
+                <button onclick="copiarCodigoBarras('${vr.codigoBarras}', this)" style="background:transparent; border:none; color:#17a2b8; font-size:20px; cursor:pointer; transition:0.2s;" title="Copiar">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Tira a lista da tela com animação
+    modalListaMaster.classList.remove('master-box-anim-in');
+    modalListaMaster.classList.add('master-box-anim-out');
+    
+    // Espera a lista sair e coloca as variações com animação
+    setTimeout(() => {
+        modalListaMaster.style.display = 'none';
+        
+        modalVariacoesMaster.classList.remove('master-box-anim-out');
+        modalVariacoesMaster.classList.add('master-box-anim-in');
+        modalVariacoesMaster.style.display = 'block';
+    }, 400);
+}
+
+// Transição das Variações voltando para a Lista
+window.voltarParaListaMaster = function() {
+    modalVariacoesMaster.classList.remove('master-box-anim-in');
+    modalVariacoesMaster.classList.add('master-box-anim-out');
+    
+    setTimeout(() => {
+        modalVariacoesMaster.style.display = 'none';
+        
+        modalListaMaster.classList.remove('master-box-anim-out');
+        modalListaMaster.classList.add('master-box-anim-in');
+        modalListaMaster.style.display = 'block';
+    }, 400);
+}
+
+window.voltarParaListaMaster = function() {
+    modalVariacoesMaster.style.display = 'none';
+    modalListaMaster.style.display = 'block';
+}
+
+async function carregarDadosMaster() {
+    const tbody = document.getElementById('listaCaixasMasterBody');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Carregando...</td></tr>';
+    
+    // Conecta no Firestore em tempo real
+    db.collection('caixasMaster').orderBy('ref').onSnapshot(snap => {
+        dadosCaixasMaster = [];
+        snap.forEach(doc => {
+            dadosCaixasMaster.push({ id: doc.id, ...doc.data() });
+        });
+        // Aplica o filtro atual se houver
+        const termo = buscaRefMaster.value.toLowerCase();
+        const filtrados = dadosCaixasMaster.filter(p => p.ref.toLowerCase().includes(termo));
+        renderizarTabelaMaster(filtrados);
+    });
+}
+
+function renderizarTabelaMaster(lista) {
+    const tbody = document.getElementById('listaCaixasMasterBody');
+    tbody.innerHTML = '';
+    
+    if(lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 4 : 3}" style="text-align:center; padding:20px; color:#999;">Nenhum produto encontrado.</td></tr>`;
+        return;
+    }
+
+    lista.forEach(prod => {
+        const tr = document.createElement('tr');
+        tr.className = 'tr-master-hover'; // Adiciona o hover
+        tr.style.borderBottom = '1px solid #eee';
+        tr.style.cursor = 'pointer'; // Muda o mouse para "mãozinha"
+        
+        // Clique na linha inteira
+        tr.onclick = (e) => {
+            // Se o clique FOI em um botão de ação do ADM, não faz nada. 
+            // Se NÃO FOI, abre as variações.
+            if (!e.target.closest('.adm-action-btn')) {
+                abrirVariacoesMaster(prod);
+            }
+        };
+
+        const acoesAdm = isAdmin ? `
+            <td style="padding:12px; text-align:center;">
+                <button class="adm-action-btn" title="Editar" style="border:none; background:transparent; color:#f39c12; cursor:pointer; margin-right:10px; font-size:16px;" onclick="editarProdutoMaster('${prod.id}')"><i class="fa-solid fa-pen"></i></button>
+                <button class="adm-action-btn" title="Excluir" style="border:none; background:transparent; color:#e74c3c; cursor:pointer; font-size:16px;" onclick="excluirProdutoMaster('${prod.id}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        ` : '';
+
+        // O ícone agora é apenas visual
+        tr.innerHTML = `
+            <td style="padding:12px; color:#555;">${prod.ref}</td>
+            <td style="padding:12px; color:#555;">${prod.nome}</td>
+            <td style="padding:12px; text-align:center;">
+                <i class="fa-solid fa-layer-group" style="font-size:16px; color:#17a2b8;"></i>
+            </td>
+            ${acoesAdm}
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+window.abrirVariacoesMaster = function(produto) {
+    modalListaMaster.style.display = 'none';
+    modalVariacoesMaster.style.display = 'block';
+    
+    document.getElementById('varProdNome').textContent = produto.nome;
+    document.getElementById('varProdRef').textContent = produto.ref;
+    
+    const container = document.getElementById('cardsVariacoesContainer');
+    container.innerHTML = '';
+    
+    if(!produto.variacoes || produto.variacoes.length === 0) {
+        container.innerHTML = '<p style="color:#999;">Nenhuma variação cadastrada para este produto.</p>';
+        return;
+    }
+
+    produto.variacoes.forEach(vr => {
+        const card = document.createElement('div');
+        card.style.cssText = "background:#fff; border-radius:12px; padding:20px; width:220px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.05); border:1px solid #eee;";
+        card.innerHTML = `
+            <h3 style="margin:0 0 5px 0; font-size:16px; color:#333;">${vr.caixa} (${vr.quantidade})</h3>
+            <p style="margin:0 0 15px 0; font-size:14px; color:#666; font-weight:bold;">Peso: ${vr.peso}</p>
+            <div style="font-size:12px; color:#888; margin-bottom:8px;">CÓDIGO: ${vr.codigoBarras}</div>
+            <button onclick="copiarCodigoBarras('${vr.codigoBarras}', this)" style="background:transparent; border:none; color:#17a2b8; font-size:20px; cursor:pointer; transition:0.2s;" title="Copiar">
+                <i class="fa-regular fa-copy"></i>
+            </button>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Função de Copiar o Código de Barras
+window.copiarCodigoBarras = function(codigo, btnElement) {
+    navigator.clipboard.writeText(codigo).then(() => {
+        const iconeOriginal = btnElement.innerHTML;
+        btnElement.innerHTML = '<i class="fa-solid fa-check" style="color:#28a745;"></i>';
+        setTimeout(() => { btnElement.innerHTML = iconeOriginal; }, 1500);
+    }).catch(err => {
+        console.error('Erro ao copiar: ', err);
+    });
+}
+
+// --- FUNÇÕES ADMIN (CRUD COMPLETO PELA INTERFACE) ---
+const modalFormMasterOverlay = document.getElementById('modalFormMasterOverlay');
+const containerVariacoesMaster = document.getElementById('containerVariacoesMaster');
+
+window.abrirFormularioMaster = function() {
+    produtoEditandoId = null;
+    document.getElementById('formMasterTitle').innerHTML = '<i class="fa-solid fa-box-open"></i> Novo Produto Master';
+    document.getElementById('inputMasterRef').value = '';
+    document.getElementById('inputMasterNome').value = '';
+    containerVariacoesMaster.innerHTML = ''; 
+    adicionarLinhaVariacao(); 
+    
+    const boxForm = modalFormMasterOverlay.firstElementChild;
+    
+    modalFormMasterOverlay.classList.remove('master-overlay-anim-out');
+    boxForm.classList.remove('master-box-anim-out');
+    
+    modalFormMasterOverlay.classList.add('master-overlay-anim-in');
+    boxForm.classList.add('master-box-anim-in');
+    
+    modalFormMasterOverlay.style.display = 'flex';
+}
+
+window.fecharFormMaster = function() {
+    const boxForm = modalFormMasterOverlay.firstElementChild;
+    
+    modalFormMasterOverlay.classList.remove('master-overlay-anim-in');
+    modalFormMasterOverlay.classList.add('master-overlay-anim-out');
+    
+    boxForm.classList.remove('master-box-anim-in');
+    boxForm.classList.add('master-box-anim-out');
+    
+    setTimeout(() => {
+        modalFormMasterOverlay.style.display = 'none';
+    }, 200);
+}
+
+window.adicionarLinhaVariacao = function(dados = null) {
+    const div = document.createElement('div');
+    div.className = 'linha-variacao-master';
+    div.style.cssText = "display:flex; gap:10px; align-items:flex-end; background:#fff; padding:15px; border:1px solid #ddd; border-radius:8px;";
+    
+    // Valores padrão ou dados vindos da edição
+    const caixa = dados ? dados.caixa : '';
+    const qtd = dados ? dados.quantidade : '';
+    const peso = dados ? dados.peso : '';
+    const codigo = dados ? dados.codigoBarras : '';
+
+    div.innerHTML = `
+        <div style="flex:1;">
+            <label style="font-size:11px; color:#666; font-weight:bold;">CAIXA</label>
+            <input type="text" class="var-caixa" placeholder="Ex: CAIXA 1" value="${caixa}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
+        </div>
+        <div style="flex:1;">
+            <label style="font-size:11px; color:#666; font-weight:bold;">QUANTIDADE</label>
+            <input type="text" class="var-qtd" placeholder="Ex: CX60" value="${qtd}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
+        </div>
+        <div style="flex:1;">
+            <label style="font-size:11px; color:#666; font-weight:bold;">PESO (kg)</label>
+            <input type="text" class="var-peso" placeholder="Ex: 2,86" value="${peso}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
+        </div>
+        <div style="flex:1.5;">
+            <label style="font-size:11px; color:#666; font-weight:bold;">CÓDIGO DE BARRAS</label>
+            <input type="text" class="var-codigo" placeholder="EAN" value="${codigo}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
+        </div>
+        <div>
+            <button type="button" onclick="this.parentElement.parentElement.remove()" style="background:#dc3545; color:#fff; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;" title="Remover Linha">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    `;
+    containerVariacoesMaster.appendChild(div);
+}
+
+window.salvarProdutoMaster = async function() {
+    const btnSalvar = document.getElementById('btnSalvarMaster');
+    const ref = document.getElementById('inputMasterRef').value.trim();
+    const nome = document.getElementById('inputMasterNome').value.trim();
+
+    if(!ref || !nome) return alert("Por favor, preencha a Referência e o Nome do Produto.");
+
+    // Varre todas as linhas de variação para montar o array
+    const linhas = document.querySelectorAll('.linha-variacao-master');
+    const arrayVariacoes = [];
+    
+    linhas.forEach(linha => {
+        const caixa = linha.querySelector('.var-caixa').value.trim();
+        const qtd = linha.querySelector('.var-qtd').value.trim();
+        const pesoRaw = linha.querySelector('.var-peso').value.trim();
+        const codigo = linha.querySelector('.var-codigo').value.trim();
+        
+        // Se a linha estiver parcialmente preenchida, ignora ou alerta
+        if(caixa || qtd || codigo) {
+            arrayVariacoes.push({
+                caixa: caixa,
+                quantidade: qtd,
+                peso: parseFloat(pesoRaw.replace(',', '.')) || 0, // Trata vírgula para ponto e converte pra número
+                codigoBarras: codigo
+            });
+        }
+    });
+
+    const dadosProduto = {
+        ref: ref,
+        nome: nome,
+        variacoes: arrayVariacoes
+    };
+
+    try {
+        btnSalvar.textContent = "Salvando...";
+        btnSalvar.disabled = true;
+
+        if (produtoEditandoId) {
+            // Edição
+            await db.collection('caixasMaster').doc(produtoEditandoId).update(dadosProduto);
+        } else {
+            // Criação Nova
+            await db.collection('caixasMaster').add(dadosProduto);
+        }
+
+        fecharFormMaster();
+    } catch (error) {
+        alert("Erro ao salvar produto: " + error.message);
+    } finally {
+        btnSalvar.textContent = "Salvar Produto";
+        btnSalvar.disabled = false;
+    }
+}
+
+// Chama a edição puxando os dados do array que já está na memória
+window.editarProdutoMaster = function(id) {
+    const produto = dadosCaixasMaster.find(p => p.id === id);
+    if(!produto) return;
+
+    produtoEditandoId = id;
+    document.getElementById('formMasterTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Produto Master';
+    document.getElementById('inputMasterRef').value = produto.ref;
+    document.getElementById('inputMasterNome').value = produto.nome;
+    
+    containerVariacoesMaster.innerHTML = '';
+    
+    if(produto.variacoes && produto.variacoes.length > 0) {
+        produto.variacoes.forEach(varData => adicionarLinhaVariacao(varData));
+    } else {
+        adicionarLinhaVariacao(); // Se por acaso não tiver nenhuma, abre uma vazia
+    }
+    
+    // --- CORREÇÃO DO BUG "MODAL FANTASMA" (ANIMAÇÕES) ---
+    const boxForm = modalFormMasterOverlay.firstElementChild;
+    
+    modalFormMasterOverlay.classList.remove('master-overlay-anim-out');
+    boxForm.classList.remove('master-box-anim-out');
+    
+    modalFormMasterOverlay.classList.add('master-overlay-anim-in');
+    boxForm.classList.add('master-box-anim-in');
+    
+    modalFormMasterOverlay.style.display = 'flex';
+}
+
+window.excluirProdutoMaster = async function(id) {
+    if(confirm("Tem certeza que deseja excluir este produto da lista master de forma permanente?")) {
+        try {
+            await db.collection('caixasMaster').doc(id).delete();
+        } catch (error) {
+            alert("Erro ao excluir: " + error.message);
+        }
+    }
+}
+
+// --- FUNÇÃO DE IMPORTAÇÃO EM MASSA (INTELIGENTE) ---
+window.importarPlanilhaMaster = function(input) {
+    const file = input.files[0];
+    if(!file) return;
+
+    // Muda o cursor para indicar que está processando
+    document.body.style.cursor = 'wait';
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const text = e.target.result;
+            
+            // 1. Divide por qualquer tipo de quebra de linha (Windows, Mac, Linux)
+            const linhasBrutas = text.split(/\r\n|\n|\r/); 
+            
+            // 2. Limpa linhas totalmente vazias pro final do arquivo não dar erro
+            const linhas = linhasBrutas.filter(l => l.trim() !== '');
+
+            if(linhas.length < 2) return alert("Arquivo vazio ou sem dados suficientes.");
+
+            // 3. Descobre qual o separador (\t para TSV, ; ou , para CSV)
+            let separador = '\t';
+            if(linhas[0].includes(';') && !linhas[0].includes('\t')) separador = ';';
+            if(linhas[0].includes(',') && !linhas[0].includes('\t') && !linhas[0].includes(';')) separador = ',';
+
+            // 4. Procura a linha do cabeçalho de forma inteligente (ignora a linha 1 de título se houver)
+            let headerIndex = -1;
+            let cabecalho = [];
+            for(let i = 0; i < Math.min(linhas.length, 5); i++) {
+                // Separa as colunas e remove aspas que o excel/sheets coloca
+                const cols = linhas[i].split(separador).map(c => c.trim().toUpperCase().replace(/"/g, ''));
+                if(cols.includes("PRODUTO") && cols.includes("REF")) {
+                    headerIndex = i;
+                    cabecalho = cols;
+                    break;
+                }
+            }
+
+            if(headerIndex === -1) {
+                alert("Erro: Não encontrei as colunas 'PRODUTO' e 'REF' no topo do arquivo. Verifique se o nome das colunas está exato.");
+                return;
+            }
+
+            const idxProduto = cabecalho.indexOf("PRODUTO");
+            const idxRef = cabecalho.indexOf("REF");
+            const idxQtd = cabecalho.indexOf("QUANTIDADE");
+            const idxCaixa = cabecalho.indexOf("CAIXA");
+            const idxPeso = cabecalho.indexOf("PESO");
+            // Busca a coluna de código de barras independente de como você escreveu
+            const idxCodigo = cabecalho.findIndex(c => c.includes("CÓDIGO DE BARRAS") || c.includes("CODIGO") || c.includes("BARRAS"));
+
+            const mapProdutos = {};
+            let caixasLidas = 0;
+
+            // 5. Começa a ler a partir da linha logo A BAIXO do cabeçalho
+            for(let i = headerIndex + 1; i < linhas.length; i++) {
+                const colunas = linhas[i].split(separador).map(c => c.trim().replace(/^"|"$/g, ''));
+                if(colunas.length < 2) continue; // Pula linhas bugadas
+
+                const ref = colunas[idxRef];
+                const nome = colunas[idxProduto];
+                
+                // Se não tem Ref ou Nome, não tem como salvar
+                if(!ref || !nome || ref === "" || nome === "") continue;
+
+                // Pega o resto dos dados (se a coluna não existir na planilha, fica vazio)
+                const qtd = idxQtd !== -1 ? (colunas[idxQtd] || '') : '';
+                const caixa = idxCaixa !== -1 ? (colunas[idxCaixa] || '') : '';
+                const pesoStr = idxPeso !== -1 ? (colunas[idxPeso] || '0') : '0';
+                const codigo = idxCodigo !== -1 ? (colunas[idxCodigo] || '') : '';
+
+                // Converte peso (troca vírgula por ponto para o banco aceitar)
+                const peso = parseFloat(pesoStr.replace(',', '.')) || 0;
+
+                // Se o produto não existe ainda no agrupamento, cria a base dele
+                if(!mapProdutos[ref]) {
+                    mapProdutos[ref] = { ref: ref, nome: nome, variacoes: [] };
+                }
+
+                // Adiciona a caixa (variação) dentro do produto
+                if(caixa || qtd || codigo) {
+                    mapProdutos[ref].variacoes.push({
+                        caixa: caixa,
+                        quantidade: qtd,
+                        peso: peso,
+                        codigoBarras: codigo
+                    });
+                    caixasLidas++;
+                }
+            }
+
+            const produtosArray = Object.values(mapProdutos);
+            
+            if(produtosArray.length === 0) {
+                alert("Nenhum produto válido encontrado. Verifique se as linhas possuem dados nas colunas REF e PRODUTO.");
+                return;
+            }
+            
+            if(confirm(`Show! Encontrei ${produtosArray.length} produtos base e ${caixasLidas} variações (caixas). Deseja importar tudo para o banco agora?`)) {
+                
+                // Usa batch para mandar tudo de uma vez e não sobrecarregar o firebase
+                const batch = db.batch();
+                produtosArray.forEach(prod => {
+                    const docRef = db.collection('caixasMaster').doc(); 
+                    batch.set(docRef, prod);
+                });
+
+                await batch.commit();
+                alert("Importação concluída com sucesso! Feche e abra a janela para ver.");
+            }
+        } catch (error) {
+            alert("Erro durante a importação: " + error.message);
+            console.error(error);
+        } finally {
+            document.body.style.cursor = 'default';
+            input.value = ''; // Reseta o botão para permitir importar o mesmo arquivo de novo se errar
+        }
+    };
+    
+    // Lê o arquivo suportando acentuação BR
+    reader.readAsText(file, 'ISO-8859-1'); 
+}
+
+// =========================================================================
+// COMANDO GLOBAL: ENTER PARA CONFIRMAR
+// =========================================================================
+document.addEventListener('keydown', function(e) {
+    // Verifica se a tecla pressionada foi o Enter
+    if (e.key === 'Enter') {
+        
+        // Regra 1: Ignora se estiver digitando em um campo de texto longo (textarea) para permitir pular linha
+        if (e.target.tagName === 'TEXTAREA') return;
+
+        let acaoRealizada = false;
+
+        // Regra 2: Verifica qual modal está aberto no momento e clica no botão principal correspondente
+        if (document.getElementById('addCaixaModal') && document.getElementById('addCaixaModal').style.display === 'flex') {
+            document.getElementById('addCaixaBtn')?.click();
+            acaoRealizada = true;
+            
+        } else if (document.getElementById('popupOrdens') && document.getElementById('popupOrdens').style.display === 'flex') {
+            document.getElementById('salvarOrdemBtn')?.click();
+            acaoRealizada = true;
+            
+        } else if (document.getElementById('modalFormMasterOverlay') && document.getElementById('modalFormMasterOverlay').style.display === 'flex') {
+            document.getElementById('btnSalvarMaster')?.click();
+            acaoRealizada = true;
+            
+        } else if (document.getElementById('confirmCsvModal') && document.getElementById('confirmCsvModal').style.display === 'flex') {
+            document.getElementById('confirmCsvBtn')?.click();
+            acaoRealizada = true;
+            
+        } else if (document.getElementById('logoutConfirmModal') && document.getElementById('logoutConfirmModal').style.display === 'flex') {
+            document.getElementById('confirmLogoutBtn')?.click();
+            acaoRealizada = true;
+            
+        } else if (document.getElementById('multiPopupOverlay') && document.getElementById('multiPopupOverlay').style.display === 'flex') {
+            // Inteligência extra pro modal de Novo Pedido:
+            // Se o foco estiver no Tipo de Doc ou no Responsável, o Enter adiciona o documento à lista.
+            // Se estiver em qualquer outro campo (Romaneio, Loja), o Enter salva o pedido todo.
+            const isDocField = e.target.closest('#responsaveisContainer') || e.target.id === 'multiDocTipo';
+            if (isDocField) {
+                document.getElementById('addDocumentoBtn')?.click();
+            } else {
+                document.getElementById('multiSaveBtn')?.click();
+            }
+            acaoRealizada = true;
+        }
+
+        // Regra 3: Se o script detectou um modal e clicou no botão, previne o comportamento padrão do navegador (evita "piscar" a tela)
+        if (acaoRealizada) {
+            e.preventDefault();
+        }
+    }
+});
