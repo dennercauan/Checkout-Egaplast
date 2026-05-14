@@ -410,7 +410,14 @@ function configurarListenersPessoais() {
     const unsubSimples = db.collection("usuarios").doc(currentUser.uid).collection("elementos").doc(elementoId).collection("pedidos").onSnapshot(() => atualizarPaginaInteiraPessoal());
     const unsubMulti = db.collection("usuarios").doc(currentUser.uid).collection("elementos").doc(elementoId).collection("pedidosMultiDocumento").onSnapshot(() => atualizarPaginaInteiraPessoal());
     const unsubShared = db.collection("usuarios").doc(currentUser.uid).collection("pedidosCompartilhadosComigo").onSnapshot(() => atualizarPaginaInteiraPessoal());
-    unsubscribers.push(unsubSimples, unsubMulti, unsubShared);
+    
+    // NOVO: Carrega as caixas master em background para o cálculo do WMS
+    const unsubMaster = db.collection('caixasMaster').onSnapshot(snap => {
+        dadosCaixasMaster = [];
+        snap.forEach(doc => dadosCaixasMaster.push({ id: doc.id, ...doc.data() }));
+    });
+
+    unsubscribers.push(unsubSimples, unsubMulti, unsubShared, unsubMaster);
 }
 
 async function atualizarPaginaInteiraPessoal() {
@@ -876,6 +883,7 @@ if(multiSaveBtn) {
             local: multiLocal?.value || 'DF',
             uf: multiUf?.value || '',
             observacoes: multiObservacoes?.value || '',
+            isCaixaMaster: document.getElementById('multiIsCaixaMaster')?.checked || false, // NOVO CAMPO
             documentos: documentosTemporarios.map(({idTemp, ...rest}) => rest),
             uidsVinculados: uidsVinculados
         };
@@ -963,6 +971,7 @@ window.abrirEdicao = async function(id, criadorUid, elemIdOriginal, isLegacy) {
     if(multiLocal) multiLocal.value = d.local || 'DF';
     if(multiUf) multiUf.value = d.uf || '';
     if(multiObservacoes) multiObservacoes.value = d.observacoes || '';
+    if(document.getElementById('multiIsCaixaMaster')) document.getElementById('multiIsCaixaMaster').checked = d.isCaixaMaster || false; // NOVO
     
     documentosTemporarios = (d.documentos || []).map((doc, i) => ({ ...doc, idTemp: i }));
     renderizarDocsTemp();
@@ -1054,24 +1063,47 @@ async function renderizarGridCaixas() {
                 </div>`;
         });
 
-        if(!caixasHtml) caixasHtml = '<p style="text-align:center; color:#ccc; font-style:italic;">Nenhuma caixa.</p>';
+        if(!caixasHtml) caixasHtml = '<p style="text-align:center; color:#ccc; font-style:italic; padding:20px 0;">Nenhuma caixa efetivada ainda.</p>';
         const respText = doc.responsaveis ? doc.responsaveis.join(', ') : doc.responsavel;
 
-        const acoesHtml = temPermissao ? `
-            <div class="import-area">
-                <label class="import-label" for="csvFile-${index}"><i class="fa-solid fa-file-csv"></i> Importar CSV (Substituir)</label>
-                <input type="file" id="csvFile-${index}" accept=".csv" style="display:none;" onchange="processarCSV(this, ${index})">
-                <div id="fileName-${index}" class="file-status">${doc.arquivoCsv ? 'Arquivo: ' + doc.arquivoCsv : ''}</div>
-            </div>
-            <button class="btn-add-manual" onclick="abrirModalAddCaixa(${index})">+ Caixa Manual</button>
-        ` : '';
+        let acoesHtml = '';
+        if (temPermissao) {
+            if (dados.isCaixaMaster) {
+                acoesHtml = `
+                <div class="import-area" style="background:#fffbea; border-color:#ffeeba;">
+                    <label class="import-label" for="wmsCsvFile-${index}" style="color:#856404; font-size:13px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Abrir Planejamento de Caixas Master (CSV)</label>
+                    <input type="file" id="wmsCsvFile-${index}" accept=".csv,.tsv,.txt" style="display:none;" onchange="processarWmsCSV(this, ${index})">
+                    <div class="file-status" style="color:#856404;">Faça upload do CSV de SKUs do WMS para iniciar o painel.</div>
+                </div>`;
+            } else {
+                acoesHtml = `
+                <div class="import-area">
+                    <label class="import-label" for="csvFile-${index}"><i class="fa-solid fa-file-csv"></i> Importar CSV de Caixas (Substituir)</label>
+                    <input type="file" id="csvFile-${index}" accept=".csv" style="display:none;" onchange="processarCSV(this, ${index})">
+                    <div id="fileName-${index}" class="file-status">${doc.arquivoCsv ? 'Arquivo: ' + doc.arquivoCsv : ''}</div>
+                </div>
+                <button class="btn-add-manual" onclick="abrirModalAddCaixa(${index})">+ Caixa Manual</button>`;
+            }
+        }
 
+        // --- A ESTRUTURA MAGNÍFICA DAS DUAS CAIXAS ---
         section.innerHTML = `
             <div class="doc-header">
                 <h4>${doc.tipo} <small style="color:#999;">(${respText})</small></h4>
             </div>
             ${acoesHtml}
-            <div style="max-height:300px; overflow-y:auto;">${caixasHtml}</div>
+            
+            <div id="wms-panel-container-${index}" style="display:none; margin-bottom: 25px;"></div>
+            
+            <div id="caixas-list-container-${index}" style="border: 1px solid #ddd; border-radius: 12px; padding: 20px; background: #fdfdfd; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                    <h3 style="margin:0; color:var(--primary); font-size:18px;"><i class="fa-solid fa-cubes-stacked"></i> Caixas Efetivadas (Salvas no Banco)</h3>
+                    <span style="background:var(--primary); color:#fff; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${doc.caixas ? doc.caixas.length : 0} Volume(s)</span>
+                </div>
+                <div style="max-height:40vh; overflow-y:auto; padding-right:5px;">
+                    ${caixasHtml}
+                </div>
+            </div>
         `;
         container.appendChild(section);
     });
@@ -1368,6 +1400,7 @@ function limparFormMulti() {
     if(multiLocal) multiLocal.value = "DF"; 
     if(multiUf) multiUf.value = ""; 
     if(multiObservacoes) multiObservacoes.value = ""; 
+    if(document.getElementById('multiIsCaixaMaster')) document.getElementById('multiIsCaixaMaster').checked = false; // NOVO
 }
 
 function ocultarLoader() { setTimeout(() => { pageLoader.classList.add('loader-hidden'); appContent.classList.add('content-visible'); document.body.classList.remove('loading-active'); }, 500); }
@@ -1680,26 +1713,6 @@ if (btnOrdens && btnOrdens.parentElement) {
     }
 }
 
-btnAbrirCaixasMaster.addEventListener('click', () => {
-    // Adiciona as classes de entrada
-    modalMasterOverlay.classList.remove('master-overlay-anim-out');
-    modalListaMaster.classList.remove('master-box-anim-out');
-    
-    modalMasterOverlay.classList.add('master-overlay-anim-in');
-    modalListaMaster.classList.add('master-box-anim-in');
-    
-    modalMasterOverlay.style.display = 'flex';
-    modalListaMaster.style.display = 'block';
-    modalVariacoesMaster.style.display = 'none';
-    
-    if(isAdmin) {
-        adminMasterActions.style.display = 'block';
-        colunasAdmMaster.forEach(col => col.style.display = 'table-cell');
-    }
-    
-    carregarDadosMaster();
-    buscaRefMaster.focus();
-});
 
 // Ação de busca
 buscaRefMaster.addEventListener('keyup', (e) => {
@@ -1714,27 +1727,67 @@ buscaRefMaster.addEventListener('keyup', (e) => {
     renderizarTabelaMaster(filtrados);
 });
 
-// Fechar o modal principal inteiro
-window.fecharModalMaster = function() {
-    modalMasterOverlay.classList.remove('master-overlay-anim-in');
-    modalMasterOverlay.classList.add('master-overlay-anim-out');
-    
-    if (modalListaMaster.style.display !== 'none') {
-        modalListaMaster.classList.remove('master-box-anim-in');
-        modalListaMaster.classList.add('master-box-anim-out');
-    } else if (modalVariacoesMaster.style.display !== 'none') {
-        modalVariacoesMaster.classList.remove('master-box-anim-in');
-        modalVariacoesMaster.classList.add('master-box-anim-out');
-    }
+// =========================================================================
+// SISTEMA MASTER: CORREÇÃO DE RENDERIZAÇÃO E TRANSIÇÕES RÁPIDAS
+// =========================================================================
 
-    // Aumentamos o tempo para 400ms para acompanhar o novo CSS
+let masterTimer1 = null;
+
+// Motor de Animação com Renderização Segura (10ms delay para o navegador respirar)
+window.playAnimMaster = function(elemento, classeAnimacao) {
+    elemento.classList.remove('master-overlay-anim-in', 'master-overlay-anim-out', 'master-box-anim-in', 'master-box-anim-out');
     setTimeout(() => {
-        modalMasterOverlay.style.display = 'none';
-        buscaRefMaster.value = '';
-    }, 400); 
+        elemento.classList.add(classeAnimacao);
+    }, 10);
 }
 
-// Transição da Lista para as Variações
+// Botão do Header
+const btnAbrirCaixasMasterRef = document.getElementById('btnAbrirCaixasMaster');
+if(btnAbrirCaixasMasterRef) {
+    const cloneBtn = btnAbrirCaixasMasterRef.cloneNode(true);
+    btnAbrirCaixasMasterRef.parentNode.replaceChild(cloneBtn, btnAbrirCaixasMasterRef);
+    
+    cloneBtn.addEventListener('click', () => {
+        clearTimeout(masterTimer1);
+        
+        modalMasterOverlay.style.display = 'flex';
+        modalListaMaster.style.display = 'block';
+        modalVariacoesMaster.style.display = 'none';
+
+        playAnimMaster(modalMasterOverlay, 'master-overlay-anim-in');
+        playAnimMaster(modalListaMaster, 'master-box-anim-in');
+        
+        if(isAdmin) {
+            adminMasterActions.style.display = 'block';
+            colunasAdmMaster.forEach(col => col.style.display = 'table-cell');
+        }
+        
+        carregarDadosMaster();
+        buscaRefMaster.focus();
+    });
+}
+
+window.fecharModalMaster = function() {
+    clearTimeout(masterTimer1);
+    
+    playAnimMaster(modalMasterOverlay, 'master-overlay-anim-out');
+    
+    if (modalListaMaster.style.display !== 'none') {
+        playAnimMaster(modalListaMaster, 'master-box-anim-out');
+    } else if (modalVariacoesMaster.style.display !== 'none') {
+        playAnimMaster(modalVariacoesMaster, 'master-box-anim-out');
+    }
+
+    // Só tem delay para FECHAR o modal principal
+    masterTimer1 = setTimeout(() => {
+        modalMasterOverlay.style.display = 'none';
+        buscaRefMaster.value = '';
+    }, 380); 
+}
+
+// ==========================================
+// NAVEGAÇÃO INTERNA RÁPIDA (O FIM DO BUG)
+// ==========================================
 window.abrirVariacoesMaster = function(produto) {
     document.getElementById('varProdNome').textContent = produto.nome;
     document.getElementById('varProdRef').textContent = produto.ref;
@@ -1760,38 +1813,87 @@ window.abrirVariacoesMaster = function(produto) {
         });
     }
 
-    // Tira a lista da tela com animação
-    modalListaMaster.classList.remove('master-box-anim-in');
-    modalListaMaster.classList.add('master-box-anim-out');
+    // Tira a lista e coloca as variações NA HORA, sem timer!
+    modalListaMaster.style.display = 'none';
+    modalVariacoesMaster.style.display = 'block';
     
-    // Espera a lista sair e coloca as variações com animação
-    setTimeout(() => {
-        modalListaMaster.style.display = 'none';
-        
-        modalVariacoesMaster.classList.remove('master-box-anim-out');
-        modalVariacoesMaster.classList.add('master-box-anim-in');
-        modalVariacoesMaster.style.display = 'block';
-    }, 400);
+    // Anima apenas a entrada
+    playAnimMaster(modalVariacoesMaster, 'master-box-anim-in');
 }
 
-// Transição das Variações voltando para a Lista
 window.voltarParaListaMaster = function() {
-    modalVariacoesMaster.classList.remove('master-box-anim-in');
-    modalVariacoesMaster.classList.add('master-box-anim-out');
+    clearTimeout(masterTimer1); // Corta qualquer cronômetro fantasma
     
-    setTimeout(() => {
+    // 1. Inicia a animação de saída das variações
+    playAnimMaster(modalVariacoesMaster, 'master-box-anim-out');
+    
+    // 2. Espera 250ms e traz a lista de volta com a animação de entrada
+    masterTimer1 = setTimeout(() => {
         modalVariacoesMaster.style.display = 'none';
-        
-        modalListaMaster.classList.remove('master-box-anim-out');
-        modalListaMaster.classList.add('master-box-anim-in');
         modalListaMaster.style.display = 'block';
-    }, 400);
+        playAnimMaster(modalListaMaster, 'master-box-anim-in');
+    }, 250);
+}
+// ==========================================
+
+window.abrirFormularioMaster = function() {
+    clearTimeout(masterTimer1);
+    
+    produtoEditandoId = null;
+    document.getElementById('formMasterTitle').innerHTML = '<i class="fa-solid fa-box-open"></i> Novo Produto Master';
+    document.getElementById('inputMasterRef').value = '';
+    document.getElementById('inputMasterNome').value = '';
+    containerVariacoesMaster.innerHTML = ''; 
+    adicionarLinhaVariacao(); 
+    
+    const boxForm = modalFormMasterOverlay.firstElementChild;
+    modalFormMasterOverlay.style.display = 'flex';
+    
+    playAnimMaster(modalFormMasterOverlay, 'master-overlay-anim-in');
+    playAnimMaster(boxForm, 'master-box-anim-in');
 }
 
-window.voltarParaListaMaster = function() {
-    modalVariacoesMaster.style.display = 'none';
-    modalListaMaster.style.display = 'block';
+window.fecharFormMaster = function() {
+    clearTimeout(masterTimer1);
+    
+    const boxForm = modalFormMasterOverlay.firstElementChild;
+    
+    playAnimMaster(modalFormMasterOverlay, 'master-overlay-anim-out');
+    playAnimMaster(boxForm, 'master-box-anim-out');
+    
+    masterTimer1 = setTimeout(() => {
+        modalFormMasterOverlay.style.display = 'none';
+    }, 380);
 }
+
+window.editarProdutoMaster = function(id) {
+    clearTimeout(masterTimer1);
+    
+    const produto = dadosCaixasMaster.find(p => p.id === id);
+    if(!produto) return;
+
+    produtoEditandoId = id;
+    document.getElementById('formMasterTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Produto Master';
+    document.getElementById('inputMasterRef').value = produto.ref;
+    document.getElementById('inputMasterNome').value = produto.nome;
+    
+    containerVariacoesMaster.innerHTML = '';
+    
+    if(produto.variacoes && produto.variacoes.length > 0) {
+        produto.variacoes.forEach(varData => adicionarLinhaVariacao(varData));
+    } else {
+        adicionarLinhaVariacao(); 
+    }
+    
+    const boxForm = modalFormMasterOverlay.firstElementChild;
+    modalFormMasterOverlay.style.display = 'flex';
+
+    playAnimMaster(modalFormMasterOverlay, 'master-overlay-anim-in');
+    playAnimMaster(boxForm, 'master-box-anim-in');
+}
+
+
+
 
 async function carregarDadosMaster() {
     const tbody = document.getElementById('listaCaixasMasterBody');
@@ -1821,27 +1923,21 @@ function renderizarTabelaMaster(lista) {
 
     lista.forEach(prod => {
         const tr = document.createElement('tr');
-        tr.className = 'tr-master-hover'; // Adiciona o hover
+        tr.className = 'tr-master-hover'; 
         tr.style.borderBottom = '1px solid #eee';
-        tr.style.cursor = 'pointer'; // Muda o mouse para "mãozinha"
+        tr.style.cursor = 'pointer'; 
         
-        // Clique na linha inteira
-        tr.onclick = (e) => {
-            // Se o clique FOI em um botão de ação do ADM, não faz nada. 
-            // Se NÃO FOI, abre as variações.
-            if (!e.target.closest('.adm-action-btn')) {
-                abrirVariacoesMaster(prod);
-            }
-        };
+        // Clique na linha
+        tr.onclick = () => { abrirVariacoesMaster(prod); };
 
+        // Botões ADM AGORA COM stopPropagation()
         const acoesAdm = isAdmin ? `
             <td style="padding:12px; text-align:center;">
-                <button class="adm-action-btn" title="Editar" style="border:none; background:transparent; color:#f39c12; cursor:pointer; margin-right:10px; font-size:16px;" onclick="editarProdutoMaster('${prod.id}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="adm-action-btn" title="Excluir" style="border:none; background:transparent; color:#e74c3c; cursor:pointer; font-size:16px;" onclick="excluirProdutoMaster('${prod.id}')"><i class="fa-solid fa-trash"></i></button>
+                <button title="Editar" style="border:none; background:transparent; color:#f39c12; cursor:pointer; margin-right:10px; font-size:16px;" onclick="event.stopPropagation(); editarProdutoMaster('${prod.id}')"><i class="fa-solid fa-pen"></i></button>
+                <button title="Excluir" style="border:none; background:transparent; color:#e74c3c; cursor:pointer; font-size:16px;" onclick="event.stopPropagation(); excluirProdutoMaster('${prod.id}')"><i class="fa-solid fa-trash"></i></button>
             </td>
         ` : '';
 
-        // O ícone agora é apenas visual
         tr.innerHTML = `
             <td style="padding:12px; color:#555;">${prod.ref}</td>
             <td style="padding:12px; color:#555;">${prod.nome}</td>
@@ -1855,9 +1951,8 @@ function renderizarTabelaMaster(lista) {
 }
 
 window.abrirVariacoesMaster = function(produto) {
-    modalListaMaster.style.display = 'none';
-    modalVariacoesMaster.style.display = 'block';
-    
+    clearTimeout(masterTimer1); // Corta qualquer cronômetro fantasma
+
     document.getElementById('varProdNome').textContent = produto.nome;
     document.getElementById('varProdRef').textContent = produto.ref;
     
@@ -1866,22 +1961,31 @@ window.abrirVariacoesMaster = function(produto) {
     
     if(!produto.variacoes || produto.variacoes.length === 0) {
         container.innerHTML = '<p style="color:#999;">Nenhuma variação cadastrada para este produto.</p>';
-        return;
+    } else {
+        produto.variacoes.forEach(vr => {
+            const card = document.createElement('div');
+            card.style.cssText = "background:#fff; border-radius:12px; padding:20px; width:220px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.05); border:1px solid #eee;";
+            card.innerHTML = `
+                <h3 style="margin:0 0 5px 0; font-size:16px; color:#333;">${vr.caixa} (${vr.quantidade})</h3>
+                <p style="margin:0 0 15px 0; font-size:14px; color:#666; font-weight:bold;">Peso: ${vr.peso}</p>
+                <div style="font-size:12px; color:#888; margin-bottom:8px;">CÓDIGO: ${vr.codigoBarras}</div>
+                <button onclick="copiarCodigoBarras('${vr.codigoBarras}', this)" style="background:transparent; border:none; color:#17a2b8; font-size:20px; cursor:pointer; transition:0.2s;" title="Copiar">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+            `;
+            container.appendChild(card);
+        });
     }
 
-    produto.variacoes.forEach(vr => {
-        const card = document.createElement('div');
-        card.style.cssText = "background:#fff; border-radius:12px; padding:20px; width:220px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.05); border:1px solid #eee;";
-        card.innerHTML = `
-            <h3 style="margin:0 0 5px 0; font-size:16px; color:#333;">${vr.caixa} (${vr.quantidade})</h3>
-            <p style="margin:0 0 15px 0; font-size:14px; color:#666; font-weight:bold;">Peso: ${vr.peso}</p>
-            <div style="font-size:12px; color:#888; margin-bottom:8px;">CÓDIGO: ${vr.codigoBarras}</div>
-            <button onclick="copiarCodigoBarras('${vr.codigoBarras}', this)" style="background:transparent; border:none; color:#17a2b8; font-size:20px; cursor:pointer; transition:0.2s;" title="Copiar">
-                <i class="fa-regular fa-copy"></i>
-            </button>
-        `;
-        container.appendChild(card);
-    });
+    // 1. Inicia a animação de saída da lista
+    playAnimMaster(modalListaMaster, 'master-box-anim-out');
+    
+    // 2. Espera os 250ms da animação acontecerem antes de trocar a tela
+    masterTimer1 = setTimeout(() => {
+        modalListaMaster.style.display = 'none';
+        modalVariacoesMaster.style.display = 'block';
+        playAnimMaster(modalVariacoesMaster, 'master-box-anim-in');
+    }, 250); 
 }
 
 // Função de Copiar o Código de Barras
@@ -1899,38 +2003,8 @@ window.copiarCodigoBarras = function(codigo, btnElement) {
 const modalFormMasterOverlay = document.getElementById('modalFormMasterOverlay');
 const containerVariacoesMaster = document.getElementById('containerVariacoesMaster');
 
-window.abrirFormularioMaster = function() {
-    produtoEditandoId = null;
-    document.getElementById('formMasterTitle').innerHTML = '<i class="fa-solid fa-box-open"></i> Novo Produto Master';
-    document.getElementById('inputMasterRef').value = '';
-    document.getElementById('inputMasterNome').value = '';
-    containerVariacoesMaster.innerHTML = ''; 
-    adicionarLinhaVariacao(); 
-    
-    const boxForm = modalFormMasterOverlay.firstElementChild;
-    
-    modalFormMasterOverlay.classList.remove('master-overlay-anim-out');
-    boxForm.classList.remove('master-box-anim-out');
-    
-    modalFormMasterOverlay.classList.add('master-overlay-anim-in');
-    boxForm.classList.add('master-box-anim-in');
-    
-    modalFormMasterOverlay.style.display = 'flex';
-}
 
-window.fecharFormMaster = function() {
-    const boxForm = modalFormMasterOverlay.firstElementChild;
-    
-    modalFormMasterOverlay.classList.remove('master-overlay-anim-in');
-    modalFormMasterOverlay.classList.add('master-overlay-anim-out');
-    
-    boxForm.classList.remove('master-box-anim-in');
-    boxForm.classList.add('master-box-anim-out');
-    
-    setTimeout(() => {
-        modalFormMasterOverlay.style.display = 'none';
-    }, 200);
-}
+
 
 window.adicionarLinhaVariacao = function(dados = null) {
     const div = document.createElement('div');
@@ -2024,35 +2098,6 @@ window.salvarProdutoMaster = async function() {
     }
 }
 
-// Chama a edição puxando os dados do array que já está na memória
-window.editarProdutoMaster = function(id) {
-    const produto = dadosCaixasMaster.find(p => p.id === id);
-    if(!produto) return;
-
-    produtoEditandoId = id;
-    document.getElementById('formMasterTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Produto Master';
-    document.getElementById('inputMasterRef').value = produto.ref;
-    document.getElementById('inputMasterNome').value = produto.nome;
-    
-    containerVariacoesMaster.innerHTML = '';
-    
-    if(produto.variacoes && produto.variacoes.length > 0) {
-        produto.variacoes.forEach(varData => adicionarLinhaVariacao(varData));
-    } else {
-        adicionarLinhaVariacao(); // Se por acaso não tiver nenhuma, abre uma vazia
-    }
-    
-    // --- CORREÇÃO DO BUG "MODAL FANTASMA" (ANIMAÇÕES) ---
-    const boxForm = modalFormMasterOverlay.firstElementChild;
-    
-    modalFormMasterOverlay.classList.remove('master-overlay-anim-out');
-    boxForm.classList.remove('master-box-anim-out');
-    
-    modalFormMasterOverlay.classList.add('master-overlay-anim-in');
-    boxForm.classList.add('master-box-anim-in');
-    
-    modalFormMasterOverlay.style.display = 'flex';
-}
 
 window.excluirProdutoMaster = async function(id) {
     if(confirm("Tem certeza que deseja excluir este produto da lista master de forma permanente?")) {
@@ -2240,3 +2285,360 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// =========================================================================
+// SISTEMA MASTER: PAINEL DE PLANEJAMENTO DEFINITIVO V6
+// =========================================================================
+
+window.wmsSessions = {}; 
+
+window.processarWmsCSV = async function(input, docIndex) {
+    const file = input.files[0]; if(!file) return;
+    document.body.style.cursor = 'wait';
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const text = e.target.result;
+            const linhas = text.trim().split(/\r\n|\n|\r/);
+            let separador = linhas[0].includes('\t') ? '\t' : (linhas[0].includes(';') ? ';' : ',');
+            const cabecalho = linhas[0].split(separador).map(c => c.trim().toUpperCase().replace(/"/g, ''));
+            
+            let idxRef = cabecalho.findIndex(c => c.includes("CÓDIGO") || c === "PRODUTO" || c === "REF");
+            let idxQtd = cabecalho.findIndex(c => c.includes("QTDE CONFERIDA") || c.includes("QUANTIDADE"));
+            let idxDesc = cabecalho.findIndex(c => c.includes("DESCRIÇÃO") || c.includes("DESCRICAO"));
+
+            if(idxRef === -1 || idxQtd === -1) {
+                alert("Colunas de Código ou Quantidade não encontradas no CSV.");
+                return;
+            }
+
+            const snapMaster = await db.collection('caixasMaster').get();
+            const baseMaster = [];
+            snapMaster.forEach(d => baseMaster.push(d.data()));
+
+            let skusProcessados = [];
+            for(let i=1; i<linhas.length; i++) {
+                const cols = linhas[i].split(separador).map(c => c.trim().replace(/^"|"$/g, ''));
+                if(cols.length <= idxRef) continue;
+                
+                const ref = cols[idxRef];
+                const qtd = parseInt(cols[idxQtd] || "0");
+                if(!ref || qtd <= 0) continue;
+
+                const masterRef = baseMaster.find(m => String(m.ref).trim() === String(ref).trim() || String(m.ref).trim().replace(/^0+/, '') === String(ref).trim().replace(/^0+/, ''));
+                
+                const variacoesValidas = masterRef ? masterRef.variacoes.filter(v => {
+                    const qp = parseInt(v.quantidade.replace(/\D/g, '')) || 1;
+                    return qtd % qp === 0;
+                }) : [];
+
+                const isMissing = variacoesValidas.length === 0;
+
+                skusProcessados.push({
+                    ref, 
+                    desc: idxDesc !== -1 ? cols[idxDesc] : "Produto",
+                    qtdTotal: qtd,
+                    variacoesDisponiveis: variacoesValidas,
+                    selectedVar: 0,
+                    caixaNome: !isMissing ? variacoesValidas[0].caixa : "",
+                    qtdPadrao: !isMissing ? parseInt(variacoesValidas[0].quantidade.replace(/\D/g, '')) : 0,
+                    pesoPadrao: !isMissing ? variacoesValidas[0].peso : 0,
+                    isMissing: isMissing,
+                    isExpanded: false
+                });
+            }
+
+            window.wmsSessions[docIndex] = {
+                skus: skusProcessados,
+                sortCol: 'ref',
+                sortDir: 'asc',
+                fileName: file.name
+            };
+
+            window.recalcWmsBoxes(docIndex);
+            window.renderWmsPanel(docIndex);
+
+        } catch(err) { alert("Erro: " + err.message); }
+        finally { document.body.style.cursor = 'default'; input.value = ''; }
+    };
+    reader.readAsText(file, 'ISO-8859-1');
+}
+
+window.renderWmsPanel = function(docIndex) {
+    const session = window.wmsSessions[docIndex];
+    const container = document.getElementById(`wms-panel-container-${docIndex}`);
+    const listNormal = document.getElementById(`caixas-list-container-${docIndex}`);
+    
+    // --- O SEGREDO 1: NÃO ESCONDER MAIS A LISTA DE CAIXAS ---
+    if(listNormal) listNormal.style.display = 'block'; 
+    container.style.display = 'block';
+
+    const importArea = container.parentElement.querySelector('.import-area');
+    if (importArea) importArea.style.display = 'none';
+
+    const modalContent = container.closest('.modal-content');
+    if(modalContent) {
+        modalContent.classList.remove('modal-lg');
+        modalContent.classList.add('modal-xl');
+    }
+    
+    // Libera a grade pro tamanho máximo
+    const caixasContainer = document.getElementById('listaCaixasContainer');
+    if(caixasContainer) {
+        caixasContainer.classList.remove('caixas-grid');
+        caixasContainer.style.display = 'block';
+    }
+
+    const docSection = container.closest('.doc-section');
+    if(docSection) {
+        docSection.style.padding = '0';
+        docSection.style.border = 'none';
+        docSection.style.boxShadow = 'none';
+        docSection.style.background = 'transparent';
+    }
+
+    let trs = session.skus.map((sku, i) => {
+        const numCaixas = sku.qtdPadrao > 0 ? Math.ceil(sku.qtdTotal / sku.qtdPadrao) : 0;
+        
+        let varSelectorHtml = '';
+        if (sku.variacoesDisponiveis.length > 1) {
+            let opts = sku.variacoesDisponiveis.map((v, vIdx) => {
+                return `<option value="${vIdx}" ${sku.selectedVar === vIdx ? 'selected' : ''}>${v.caixa} / ${v.quantidade} / ${v.peso}kg</option>`;
+            }).join('');
+            varSelectorHtml = `<select onclick="event.stopPropagation()" onchange="window.updateSkuRow(${docIndex}, ${i}, 'variacao', this.value)" style="width:100%; padding:6px; font-size:11px; border-radius:6px; border:1px solid #ccc; cursor:pointer;">${opts}</select>`;
+        } else if (sku.variacoesDisponiveis.length === 1) {
+            varSelectorHtml = `<span style="font-size:11px; font-weight:bold; color:#666; background:#eee; padding:4px 8px; border-radius:4px;">Padrão Único</span>`;
+        } else {
+            varSelectorHtml = `<span style="color:#dc3545; font-size:10px; font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> FALTA DADOS</span>`;
+        }
+
+        const unCxCell = sku.isMissing 
+            ? `<input type="number" onclick="event.stopPropagation()" style="width:100%; padding:6px; text-align:center; border:1px solid #dc3545; border-radius:4px;" value="${sku.qtdPadrao || ''}" placeholder="0" onchange="window.updateSkuRow(${docIndex}, ${i}, 'qtdPadrao', this.value)">`
+            : `<strong style="font-size:15px; color:#333;">${sku.qtdPadrao}</strong>`;
+            
+        const tipoCxCell = sku.isMissing
+            ? `<input type="text" onclick="event.stopPropagation()" style="width:100%; padding:6px; text-align:center; border:1px solid #dc3545; border-radius:4px;" value="${sku.caixaNome || ''}" placeholder="Nome (Ex: CX 4)" onchange="window.updateSkuRow(${docIndex}, ${i}, 'caixaNome', this.value)">`
+            : `<strong style="font-size:14px; color:#555;">${sku.caixaNome}</strong>`;
+
+        const pesoCell = sku.isMissing
+            ? `<input type="number" step="0.1" onclick="event.stopPropagation()" style="width:100%; padding:6px; text-align:center; border:1px solid #dc3545; border-radius:4px;" value="${sku.pesoPadrao || ''}" placeholder="0.0" onchange="window.updateSkuRow(${docIndex}, ${i}, 'pesoPadrao', this.value)">`
+            : `<strong style="font-size:14px; color:#555;">${sku.pesoPadrao}kg</strong>`;
+
+        let detalhesHtml = '';
+        if (sku.isExpanded && sku.caixasGeradasDesteSku) {
+            const listaPills = sku.caixasGeradasDesteSku.map((c, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #e0e0e0; padding:10px 15px; border-radius:8px; font-size:12px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                    <span><i class="fa-solid fa-box-open" style="color:#aaa; margin-right:8px;"></i> Volume ${idx + 1}</span>
+                    <strong style="color:var(--primary);">${c.num} <span style="font-weight:normal; color:#666;">(${c.peso}kg)</span></strong>
+                </div>
+            `).join('');
+            
+            detalhesHtml = `
+                <tr style="background:#fafafa; border-left:5px solid var(--secondary);">
+                    <td colspan="7" style="padding:20px; border-bottom:2px solid #ddd;">
+                        <h4 style="margin:0 0 10px 0; font-size:13px; color:#555;"><i class="fa-solid fa-layer-group"></i> Caixas Planejadas para este Produto:</h4>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px;">
+                            ${listaPills}
+                        </div>
+                    </td>
+                </tr>`;
+        }
+
+        return `
+            <tr onclick="window.toggleSkuExpand(${docIndex}, ${i})" style="cursor:pointer; border-bottom:1px solid #eee; background:${sku.isMissing ? '#fff5f5' : '#fff'}; transition:0.2s;" onmouseover="this.style.background='#f1f4f8'" onmouseout="this.style.background='${sku.isMissing ? '#fff5f5' : '#fff'}'">
+                <td style="padding:15px;">
+                    <i class="fa-solid ${sku.isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}" style="font-size:14px; margin-right:10px; color:var(--primary);"></i>
+                    <strong style="font-size:14px;">${sku.ref}</strong><br><small style="color:#777;">${sku.desc}</small>
+                </td>
+                <td style="padding:15px; text-align:center; font-size:16px; font-weight:900;">${sku.qtdTotal}</td>
+                <td style="padding:15px; text-align:center;">${unCxCell}</td>
+                <td style="padding:15px; text-align:center;">${tipoCxCell}</td>
+                <td style="padding:15px; text-align:center;">${pesoCell}</td>
+                <td style="padding:15px;">${varSelectorHtml}</td>
+                <td style="padding:15px; text-align:center; background:rgba(13, 50, 105, 0.04); border-left:1px solid #eee;">
+                    <div style="font-size:22px; font-weight:900; color:var(--primary);">${numCaixas}</div>
+                </td>
+            </tr>
+            ${detalhesHtml}
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:15px; border:1px solid #ddd; border-radius:12px; overflow:hidden;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:20px; background:#f8f9fa; border-bottom:1px solid #eee;">
+                <div>
+                    <h3 style="margin:0; font-size:20px; color:var(--primary);"><i class="fa-solid fa-microchip"></i> Planejamento de Volumes</h3>
+                    <small style="color:#666;">Arquivo base: <strong>${session.fileName}</strong></small>
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <label style="background:#fff; border:1px solid #ccc; padding:10px 15px; border-radius:6px; font-size:13px; cursor:pointer; font-weight:bold; color:#444; transition:0.2s;" onmouseover="this.style.background='#eee'" onmouseout="this.style.background='#fff'">
+                        <i class="fa-solid fa-rotate"></i> Re-importar
+                        <input type="file" style="display:none;" onchange="window.processarWmsCSV(this, ${docIndex})">
+                    </label>
+                    <label style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; padding:10px 15px; border-radius:6px; font-size:13px; cursor:pointer; font-weight:bold; transition:0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i> Auditar Saída WMS (CSV)
+                        <input type="file" accept=".csv" style="display:none;" onchange="window.compararWmsAuditoria(this, ${docIndex})">
+                    </label>
+                    <button style="background:var(--success); color:#fff; border:none; padding:10px 20px; border-radius:6px; font-size:13px; cursor:pointer; font-weight:bold; transition:0.2s;" onclick="window.salvarWmsFinal(${docIndex})" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                        <i class="fa-solid fa-floppy-disk"></i> Confirmar e Salvar
+                    </button>
+                </div>
+            </div>
+
+            <div id="area-comparacao-${docIndex}" style="display:none; margin: 0 20px;"></div>
+
+            <div style="width:100%; max-height:40vh; overflow-y:auto; background:#fff;">
+                <table style="width:100%; border-collapse:collapse; min-width:900px; font-size:13px;">
+                    <thead style="background:#e9ecef; position:sticky; top:0; z-index:20; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                        <tr>
+                            <th style="padding:15px; text-align:left; cursor:pointer;" onclick="window.sortWms(${docIndex}, 'ref')">PRODUTO <i class="fa-solid fa-sort" style="color:#999; margin-left:5px;"></i></th>
+                            <th style="padding:15px; text-align:center; cursor:pointer;" onclick="window.sortWms(${docIndex}, 'qtdTotal')">QTD PEDIDO <i class="fa-solid fa-sort" style="color:#999; margin-left:5px;"></i></th>
+                            <th style="padding:15px; text-align:center;">UN/CX</th>
+                            <th style="padding:15px; text-align:center;">TIPO CAIXA</th>
+                            <th style="padding:15px; text-align:center;">PESO</th>
+                            <th style="padding:15px; text-align:left;">SELECIONAR VARIAÇÃO</th>
+                            <th style="padding:15px; text-align:center; background:#dee2e6;">TOTAL CX</th>
+                        </tr>
+                    </thead>
+                    <tbody>${trs}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+};
+
+window.updateSkuRow = function(docIndex, skuIdx, campo, valor) {
+    const sku = window.wmsSessions[docIndex].skus[skuIdx];
+    
+    if (campo === 'variacao') {
+        const v = sku.variacoesDisponiveis[parseInt(valor)];
+        sku.selectedVar = parseInt(valor);
+        sku.caixaNome = v.caixa;
+        sku.qtdPadrao = parseInt(v.quantidade.replace(/\D/g, ''));
+        sku.pesoPadrao = v.peso;
+    } else if (campo === 'qtdPadrao') {
+        sku.qtdPadrao = parseInt(valor) || 0;
+    } else if (campo === 'pesoPadrao') {
+        sku.pesoPadrao = parseFloat(String(valor).replace(',', '.')) || 0;
+    } else {
+        sku[campo] = String(valor).toUpperCase();
+    }
+    
+    if (sku.qtdPadrao > 0 && sku.caixaNome !== "" && sku.pesoPadrao > 0) {
+        sku.isMissing = false; 
+    }
+    
+    window.recalcWmsBoxes(docIndex);
+    window.renderWmsPanel(docIndex);
+};
+
+window.toggleSkuExpand = function(docIndex, skuIdx) {
+    const sku = window.wmsSessions[docIndex].skus[skuIdx];
+    sku.isExpanded = !sku.isExpanded;
+    window.renderWmsPanel(docIndex);
+};
+
+window.sortWms = function(docIndex, col) {
+    const session = window.wmsSessions[docIndex];
+    session.sortDir = (session.sortCol === col && session.sortDir === 'asc') ? 'desc' : 'asc';
+    session.sortCol = col;
+    
+    session.skus.sort((a, b) => {
+        let valA = a[col], valB = b[col];
+        if (typeof valA === 'string') return session.sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        return session.sortDir === 'asc' ? valA - valB : valB - valA;
+    });
+    
+    window.renderWmsPanel(docIndex);
+};
+
+window.recalcWmsBoxes = function(docIndex) {
+    const session = window.wmsSessions[docIndex];
+    session.caixasGeradas = [];
+
+    session.skus.forEach(sku => {
+        sku.caixasGeradasDesteSku = [];
+        if (sku.qtdPadrao <= 0) return;
+
+        let qtdRestante = sku.qtdTotal;
+        while(qtdRestante > 0) {
+            const qtdNestaCaixa = Math.min(qtdRestante, sku.qtdPadrao);
+            const cx = {
+                num: sku.caixaNome || "CX ?",
+                peso: sku.pesoPadrao,
+                isBonificacao: false,
+                produtos: [{ referencia: sku.ref, descricao: sku.desc, quantidade: qtdNestaCaixa }]
+            };
+            session.caixasGeradas.push(cx);
+            sku.caixasGeradasDesteSku.push(cx);
+            qtdRestante -= qtdNestaCaixa;
+        }
+    });
+};
+
+window.compararWmsAuditoria = function(input, docIndex) {
+    const file = input.files[0];
+    if(!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+        try {
+            const caixasReais = await parseCsvParaCaixas(ev.target.result);
+            const totalReais = caixasReais.length; 
+            const session = window.wmsSessions[docIndex];
+            
+            let planejado = 0;
+            session.skus.forEach(s => {
+                if (s.qtdPadrao > 0) {
+                    planejado += Math.ceil(s.qtdTotal / s.qtdPadrao);
+                }
+            });
+
+            const area = document.getElementById(`area-comparacao-${docIndex}`);
+            area.style.display = 'block';
+            
+            const diff = planejado - totalReais;
+            const isPerfect = (planejado === totalReais);
+            const cor = isPerfect ? '#155724' : '#721c24';
+            const bg = isPerfect ? '#d4edda' : '#f8d7da';
+
+            area.innerHTML = `
+                <div style="display:flex; justify-content:space-around; align-items:center; background:${bg}; color:${cor}; padding:20px; border-radius:10px; border: 1px solid ${isPerfect ? '#c3e6cb' : '#f5c6cb'};">
+                    <div style="text-align:center;">
+                        <small style="font-weight:bold;">PLANEJADO (SISTEMA)</small>
+                        <div style="font-size:32px; font-weight:900;">${planejado} <span style="font-size:14px; font-weight:normal;">CXs</span></div>
+                    </div>
+                    <div style="font-size:30px; opacity:0.3;"><i class="fa-solid fa-arrows-left-right"></i></div>
+                    <div style="text-align:center;">
+                        <small style="font-weight:bold;">EFETIVADO (WMS)</small>
+                        <div style="font-size:32px; font-weight:900;">${totalReais} <span style="font-size:14px; font-weight:normal;">CXs</span></div>
+                    </div>
+                </div>
+                ${!isPerfect ? `<p style="text-align:center; color:#721c24; margin-top:10px; font-weight:bold; font-size:14px;"><i class="fa-solid fa-triangle-exclamation"></i> Discrepância de ${Math.abs(diff)} caixa(s) detectada! Revise as caixas manuais ou frações do WMS.</p>` : ''}
+            `;
+        } catch(err) {
+            alert("Erro na auditoria: Certifique-se de estar importando o CSV correto de caixas efetivadas. \n\n" + err.message);
+        } finally { input.value = ''; }
+    };
+    reader.readAsText(file, 'ISO-8859-1');
+};
+
+window.salvarWmsFinal = async function(docIndex) {
+    const s = window.wmsSessions[docIndex];
+    
+    // Validação se tem algum pendente
+    const pendentes = s.skus.filter(sku => sku.isMissing);
+    if (pendentes.length > 0) {
+        return alert(`Existem ${pendentes.length} produto(s) com informações de caixa faltando. Preencha os campos em vermelho antes de salvar.`);
+    }
+
+    if(confirm(`Deseja efetivar a gravação de ${s.caixasGeradas.length} caixas para este documento?`)) {
+        document.body.style.cursor = 'wait';
+        await salvarNovasCaixas(s.caixasGeradas, docIndex, s.fileName);
+        registrarLog("Planejamento Master WMS", "sucesso", `Salvas ${s.caixasGeradas.length} caixas.`);
+        document.body.style.cursor = 'default';
+        alert("Planejamento Efetivado com Sucesso!");
+    }
+};

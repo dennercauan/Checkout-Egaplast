@@ -245,6 +245,99 @@
         .ongoing-body { font-size: 12px; color: #555; display: flex; flex-direction: column; gap: 4px; }
         .ongoing-body strong { color: var(--primary); }
 
+
+/* --- MODAL XL (FULL SCREEN) - CORREÇÃO DEFINITIVA --- */
+.modal-content.modal-xl { 
+    max-width: none !important; /* Remove o limite de 550px */
+    width: 96% !important; 
+    height: 92vh !important; 
+    margin: 2vh auto !important;
+    padding: 20px !important;
+    display: block !important; /* Muda de flex para block para a tabela expandir */
+    overflow-x: hidden;
+}
+
+/* Container da Tabela com Rolagem Vertical Interna */
+.wms-table-wrapper {
+    width: 100% !important;
+    overflow-y: auto;
+    overflow-x: auto;
+    max-height: calc(92vh - 180px); /* Garante que a tabela não suma da tela */
+    border: 1px solid #eee;
+    border-radius: 12px;
+    background: #fff;
+}
+
+/* Tabela Ocupando Tudo */
+.wms-main-table {
+    width: 100% !important;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+/* Ícone de Edição Discreto */
+.edit-trigger {
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: 0.2s;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.edit-trigger:hover {
+    background: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}
+
+.edit-trigger i {
+    font-size: 11px;
+    color: #aaa;
+}
+
+.row-ausente { background-color: #fff5f5 !important; }
+.row-manual { background-color: #f0fdf4 !important; }
+
+/* Cabeçalhos de Tabela Ordenáveis */
+.sortable-header {
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+}
+.sortable-header:hover { background: #e0e0e0 !important; }
+.sortable-header::after {
+    content: '\f0dc';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 8px;
+    opacity: 0.3;
+    font-size: 10px;
+}
+
+/* Linha de Detalhes (Caixas) */
+.wms-details-row {
+    background: #fdfdfd;
+    border-left: 4px solid var(--primary);
+}
+
+.box-pill-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 8px 15px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
         @keyframes dropInElastic { 
             from { opacity: 0; transform: scale(0.8) translateY(-20px); } 
             to { opacity: 1; transform: scale(1) translateY(0); } 
@@ -444,6 +537,13 @@
                     <label>UF Destino</label>
                     <input type="text" id="multiUf" placeholder="Ex: GO" autocomplete="off">
                 </div>
+            </div>
+
+            <div style="margin-top:10px; margin-bottom:10px; padding:12px; background:#fffbea; border:1px solid #ffeeba; border-radius:8px; display:flex; align-items:center; gap:10px; transition:0.2s;" onmouseover="this.style.background='#fff3cd'" onmouseout="this.style.background='#fffbea'">
+                <input type="checkbox" id="multiIsCaixaMaster" style="width:20px; height:20px; cursor:pointer; accent-color: #856404;">
+                <label for="multiIsCaixaMaster" style="margin:0; font-size:13px; color:#856404; cursor:pointer; font-weight:bold; letter-spacing: 0;">
+                    <i class="fa-solid fa-layer-group" style="margin-right:5px;"></i> Este é um Pedido Fechado (Caixas Master)
+                </label>
             </div>
 
             <div class="form-group">
@@ -681,6 +781,22 @@
         </div>
     </div>
 </div>
+
+<div id="modalResolverVariacoesWms" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <span class="close-modal-btn" onclick="fecharModal(document.getElementById('modalResolverVariacoesWms'))">&times;</span>
+            <h2 style="color:var(--secondary); border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+                <i class="fa-solid fa-code-branch"></i> Escolher Variações
+            </h2>
+            <p style="font-size:13px; color:#666; margin-bottom:15px;">Alguns produtos deste romaneio possuem mais de um padrão de caixa no banco de dados. Selecione qual padrão utilizar para esta separação:</p>
+            
+            <div id="wmsVariacoesLista" style="max-height: 45vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right:5px;"></div>
+            
+            <div class="modal-actions" style="margin-top:20px;">
+                <button class="modal-btn" id="btnConfirmarVariacoesWms" style="background:var(--secondary);">Confirmar e Gerar Caixas</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
